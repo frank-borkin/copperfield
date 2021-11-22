@@ -30,22 +30,31 @@
 </head>
 
 <body>
-    <video autoplay muted loop id="bgVideo">
-        <source src="backgrounds/crazy-cat-clock-background.mp4" type="video/mp4">
-      </video>
-    <div id="clock">01:00:00
-
-    </div>
+    <video autoplay muted loop id="bgVideo"></video>
+    <div id="clock"></div>
 
     <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/main.js"></script>
     <script>
-        //$("body").css("background-image", "url('backgrounds/21.jpg')");
         const socket = io();
-        socket.on('timer', (data) => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const instance = urlParams.get('instance');
+        var init = true;
+
+        socket.on('status' + instance, (data) => {
+            if (init) {
+                if (data.bgType == "video") {
+                    $("#bgVideo").append("<source src='" + data.bgPath + "' type='video/mp4'>");
+                } else {
+                    $("body").css("background-image", "url('" + data.bgPath + "')");
+                }
+                init = false;
+            }
             $("#clock").html(data.time);
         });
+
+        socket.emit('register', instance);
+        console.log("registered " + instance);
     </script>
 </body>
 

@@ -8,5 +8,6 @@ $ npm ci
 $ npm start
 ```
 
-And point your browser to `http://localhost:3000`. Optionally, specify
-a port by supplying the `PORT` env variable.
+Optionally, specify a port by supplying the `PORT` env variable.
+
+Clients should go to http://server:3000/room.html?instance=4
