@@ -5,6 +5,7 @@ const path = require('path');
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
 const port = process.env.PORT || 3000;
+const date = require('date-and-time');
 
 server.listen(port, () => {
     console.log('Server listening at port %d', port);
@@ -73,4 +74,13 @@ io.on('connection', (socket) => {
             });
         }
     });
+
+    function intervalFunc() {
+        const now = new Date();
+        socket.broadcast.emit('timer', {
+            time: date.format(now, 'HH:mm:ss')
+        });
+    }
+
+    setInterval(intervalFunc, 1000);
 });
