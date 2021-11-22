@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Game Screen: Press F11 for Full Screen</title>
+    <meta charset=UTF-8>
+    <style>
+        body {
+            background-size: cover;
+        }
+        
+        #bgVideo {
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            min-width: 100%;
+            min-height: 100%;
+        }
+        
+        #clock {
+            color: white;
+            font-size: 128px;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            margin: 0 auto;
+        }
+    </style>
+</head>
+
+<body>
+    <video autoplay muted loop id="bgVideo">
+        <source src="backgrounds/crazy-cat-clock-background.mp4" type="video/mp4">
+      </video>
+    <div id="clock">01:00:00
+
+    </div>
+
+    <script src="jquery.js">
+    </script>
+    <script>
+        $("body").css("background-image", "url('backgrounds/21.jpg')");
+    </script>
+</body>
+
+</html>
