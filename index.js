@@ -14,13 +14,13 @@ server.listen(port, () => {
 
 // Routing
 app.use(express.static(path.join(__dirname, 'public')));
-timers = Array();
-state = Array();
+var timers = Array();
+var state = Array();
+var instances = Array();
+const dbResult = { games: [{ id: 1, name: 'An Hour to Kill', nodes: 1, instances: [1] }, { id: 2, name: 'The Crazy Cat Lady', nodes: 2, instances: [2, 3] }, { id: 3, name: 'Rob the Bank', nodes: 1, instances: [4] }] };
 
 io.on('connection', (socket) => {
     socket.on('register', (instance, callback) => {
-        const now = new Date();
-        timers[instance] = date.addHours(now, 1);
         state[instance] = 'reset';
         setInterval(sendStatus, 1000, instance);
         callback && callback({
@@ -33,14 +33,22 @@ io.on('connection', (socket) => {
     socket.on('gm', (callback) => {
         callback && callback({
             status: "ok",
-            games: ['An Hour to Kill', 'The Crazy Cat Lady', 'Rob the Bank']
+            games: dbResult.games
         });
     });
 
+    socket.on('state', (data) => {
+        state[data.game] = data.state;
+        if (state[data.game] == 'running') {
+            timers[data.game] = date.addHours(new Date(), 1);
+        }
+    });
+
     function sendStatus(instance) {
+        var timeLeft = 0;
         if (state[instance] == 'running') {
             var now = new Date();
-            var timeLeft = date.subtract(timers[instance], now).toSeconds();
+            timeLeft = date.subtract(timers[instance], now).toSeconds();
         }
         socket.broadcast.emit('status' + instance, { //broadcast to room
             time: padStart(Math.floor(timeLeft / 3600), 2, '0') + ':' + padStart(Math.floor(timeLeft % 3600 / 60), 2, '0') + ':' + padStart(Math.floor(timeLeft % 3600 % 60), 2, '0')

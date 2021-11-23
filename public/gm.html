@@ -32,9 +32,9 @@
         <div class="row" id="timeline">
         </div>
         <div class="btn-group" role="group" aria-label="Basic mixed styles example">
-            <button type="button" class="btn btn-success" id="start">Start</button>
-            <button type="button" class="btn btn-warning" id="pause">Pause</button>
-            <button type="button" class="btn btn-info" id="finish">Finish</button>
+            <button type="button" class="btn btn-success" id="running">Start</button>
+            <button type="button" class="btn btn-warning" id="paused">Pause</button>
+            <button type="button" class="btn btn-info" id="won">Finish</button>
             <button type="button" class="btn btn-danger" id="reset">Reset</button>
         </div>
         <!---       <div class="bg-light p-5 rounded">
@@ -55,8 +55,8 @@
         socket.on("connect", function() {
             socket.emit('gm', (data) => {
                 console.log(data.status);
-                $.each(data.games, function(i, val) {
-                    $('#games').append('<option value="' + i + '">' + val + '</option>')
+                $.each(data.games, function(i, game) {
+                    $('#games').append('<option value="' + game.id + '">' + game.name + '</option>')
                 });
             });
         });
