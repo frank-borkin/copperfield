@@ -6,6 +6,7 @@ const server = require('http').createServer(app);
 const io = require('socket.io')(server);
 const port = process.env.PORT || 3000;
 const date = require('date-and-time');
+const padStart = require('string.prototype.padstart');
 
 server.listen(port, () => {
     console.log('Server listening at port %d', port);
@@ -18,14 +19,16 @@ timers = Array();
 io.on('connection', (socket) => {
     socket.on('register', (instance) => {
         console.log("registered " + instance);
-        timers[instance] = date.parse('01:00:00 AM', 'hh:mm:ss A');
+        const now = new Date();
+        timers[instance] = date.addHours(now, 1);
         setInterval(sendStatus, 1000, instance);
     });
 
     function sendStatus(instance) {
-        timers[instance] = date.addMilliseconds(timers[instance], -500);
+        var now = new Date();
+        var timeLeft = date.subtract(timers[instance], now).toSeconds();
         socket.broadcast.emit('status' + instance, {
-            time: date.format(timers[instance], 'HH:mm:ss'),
+            time: padStart(Math.floor(timeLeft / 3600), 2, '0') + ':' + padStart(Math.floor(timeLeft % 3600 / 60), 2, '0') + ':' + padStart(Math.floor(timeLeft % 3600 % 60), 2, '0'),
             bgType: "pic",
             bgPath: "backgrounds/21.jpg"
         });
