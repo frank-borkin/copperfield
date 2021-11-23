@@ -17,20 +17,22 @@ app.use(express.static(path.join(__dirname, 'public')));
 timers = Array();
 
 io.on('connection', (socket) => {
-    socket.on('register', (instance) => {
-        console.log("registered " + instance);
+    socket.on('register', (instance, callback) => {
         const now = new Date();
         timers[instance] = date.addHours(now, 1);
         setInterval(sendStatus, 1000, instance);
+        callback && callback({
+            status: "ok",
+            bgType: "pic",
+            bgPath: "backgrounds/21.jpg"
+        });
     });
 
     function sendStatus(instance) {
         var now = new Date();
         var timeLeft = date.subtract(timers[instance], now).toSeconds();
         socket.broadcast.emit('status' + instance, {
-            time: padStart(Math.floor(timeLeft / 3600), 2, '0') + ':' + padStart(Math.floor(timeLeft % 3600 / 60), 2, '0') + ':' + padStart(Math.floor(timeLeft % 3600 % 60), 2, '0'),
-            bgType: "pic",
-            bgPath: "backgrounds/21.jpg"
+            time: padStart(Math.floor(timeLeft / 3600), 2, '0') + ':' + padStart(Math.floor(timeLeft % 3600 / 60), 2, '0') + ':' + padStart(Math.floor(timeLeft % 3600 % 60), 2, '0')
         });
     }
 });

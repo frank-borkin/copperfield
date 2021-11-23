@@ -41,22 +41,21 @@
         });
         const urlParams = new URLSearchParams(window.location.search);
         const instance = urlParams.get('instance');
-        var init = true;
 
         socket.on('status' + instance, (data) => {
-            if (init) {
+            $("#clock").html(data.time);
+        });
+
+        socket.on("connect", function() {
+            socket.emit('register', instance, (data) => {
+                console.log(data.status);
                 if (data.bgType == "video") {
                     $("#bgVideo").append("<source src='" + data.bgPath + "' type='video/mp4'>");
                 } else {
                     $("body").css("background-image", "url('" + data.bgPath + "')");
                 }
-                init = false;
-            }
-            $("#clock").html(data.time);
+            });
         });
-
-        socket.emit('register', instance);
-        console.log("registered " + instance);
     </script>
 </body>
 
