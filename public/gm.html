@@ -17,25 +17,28 @@
                     <li class="nav-item">
                         <select id="games"></select>
                     </li>
-                    <!-- <li class="nav-item">
-                        <a class="nav-link" href="#">Link</a>
-                    </li> -->
+                    <li class="nav-item">
+                        <button type="button" class="btn btn-success" id="start">Start</button>
+                    </li>
+                    <li class="nav-item">
+                        <button type="button" class="btn btn-warning" id="pause">Pause</button>
+                    </li>
+                    <li class="nav-item">
+                        <button type="button" class="btn btn-info" id="finish">Finish</button>
+                    </li>
+                    <li class="nav-item">
+                        <button type="button" class="btn btn-danger" id="reset">Reset</button>
+                    </li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <main class="container" style="padding-top: 50px;">
+    <main class="container" style="padding-top: 75px;">
         <div class="progress">
-            <div id="progress" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">00:45:12</div>
+            <div id="progress" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="3600"></div>
         </div>
         <div class="row" id="timeline">
-        </div>
-        <div class="btn-group" role="group" aria-label="Basic mixed styles example">
-            <button type="button" class="btn btn-success" id="running">Start</button>
-            <button type="button" class="btn btn-warning" id="paused">Pause</button>
-            <button type="button" class="btn btn-info" id="won">Finish</button>
-            <button type="button" class="btn btn-danger" id="reset">Reset</button>
         </div>
         <!---       <div class="bg-light p-5 rounded">
             <h1>GM stuff</h1>
@@ -61,11 +64,16 @@
             });
         });
 
+        socket.on('status1', (data) => {
+            $("#progress").html(data.time);
+            $('#progress').css('width', ((3600 - data.secondsLeft) / 36) + '%')
+        });
+
         $("button").click(function() {
-            var state = $(this).attr('id');
-            socket.emit('state', {
+            var action = $(this).attr('id');
+            socket.emit('action', {
                 game: game,
-                state: state
+                action: action
             });
         });
 
