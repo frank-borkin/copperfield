@@ -14,28 +14,39 @@ server.listen(port, () => {
 
 // Routing
 app.use(express.static(path.join(__dirname, 'public')));
-var timers = Array(); //per instance
+var timers = Array(); //of date objects. Per instance
 var state = Array(); //The states are reset, running and stopped. The actions are reset, start, end (lose) and finish (win). Pause/resume were removed. per instance
-var clues = Array(); //per instance
-var instances = Array();
-const dbResult = { games: [{ id: 1, name: 'An Hour to Kill', nodes: 1, instances: [1] }, { id: 2, name: 'The Crazy Cat Lady', nodes: 2, instances: [2, 3] }, { id: 3, name: 'Rob the Bank', nodes: 1, instances: [4] }] };
+var clues = Array(); //Current clue or empty string. Per instance
+const instances = [{ id: 1, bgType: "pic", bgPath: "backgrounds/21.jpg", game: 1 }, { id: 2, bgType: "pic", bgPath: "backgrounds/21.jpg", game: 2 }, { id: 3, bgType: "pic", bgPath: "backgrounds/21.jpg", game: 2 }, { id: 4, bgType: "pic", bgPath: "backgrounds/21.jpg", game: 3 }]
+const games = [{ id: 1, name: 'An Hour to Kill', nodes: 1, instances: [{ id: 1, name: 'HTK' }] }, { id: 2, name: 'The Crazy Cat Lady', nodes: 2, instances: [{ id: 2, name: 'Left' }, { id: 3, name: 'Right' }] }, { id: 3, name: 'Rob the Bank', nodes: 1, instances: [{ id: 4, name: 'RTB' }] }];
 
 io.on('connection', (socket) => {
+
     socket.on('register', (instance, callback) => {
-        state[instance] = 'reset';
-        clues[instance] = '';
-        setInterval(sendStatus, 1000, instance);
+        socket.username = instance;
+        var i = 0;
+        for (var j = 0; j < instances.length; j++) {
+            if (instances[j].id == instance) {
+                // __FOUND is set to the index of the element
+                i = j;
+                break;
+            }
+        }
+        socket.join("instance" + instance);
         callback && callback({
             status: "ok",
-            bgType: "pic",
-            bgPath: "backgrounds/21.jpg"
+            bgType: instances[i].bgType,
+            bgPath: instances[i].bgPath
         });
     });
 
     socket.on('gm', (callback) => {
+        instances.forEach(function(i) {
+            socket.join("instance" + i.id);
+        })
         callback && callback({
             status: "ok",
-            games: dbResult.games
+            games: games
         });
     });
 
@@ -64,10 +75,18 @@ io.on('connection', (socket) => {
             timeLeft = date.subtract(timers[instance], now).toSeconds();
             if (timeLeft <= 0) { state[instance] = 'end' }
         }
-        socket.broadcast.emit('status' + instance, { //broadcast to room
+        socket.to("instance" + instance).emit('status', { //broadcast to room
+            instance: instance,
             time: padStart(Math.floor(timeLeft / 3600), 2, '0') + ':' + padStart(Math.floor(timeLeft % 3600 / 60), 2, '0') + ':' + padStart(Math.floor(timeLeft % 3600 % 60), 2, '0'),
             secondsLeft: timeLeft,
             clue: clues[instance]
         });
     }
+
+    function init() {
+        instances.forEach(function(i) {
+            setInterval(sendStatus, 1000, i.id);
+        })
+    }
+    init();
 });

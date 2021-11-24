@@ -43,9 +43,9 @@
         const urlParams = new URLSearchParams(window.location.search);
         const instance = urlParams.get('instance');
 
-        socket.on('status' + instance, (data) => {
+        socket.on('status', (data) => {
             $("#clock").html(data.time);
-            if (data.clue.length > 0) {
+            if (data.clue && data.clue.length > 0) {
                 $("#clock").html(data.clue);
                 $("#clock").css("font-size", "36px");
             } else {
