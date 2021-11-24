@@ -18,16 +18,16 @@
                         <select id="games"></select>
                     </li>
                     <li class="nav-item">
-                        <button type="button" class="btn btn-success" id="start">Start</button>
+                        <button type="button" class="btn btn-success action" id="start">Start</button>
                     </li>
                     <li class="nav-item">
-                        <button type="button" class="btn btn-warning" id="pause">Pause</button>
+                        <button type="button" class="btn btn-warning action" id="pause">Pause</button>
                     </li>
                     <li class="nav-item">
-                        <button type="button" class="btn btn-info" id="finish">Finish</button>
+                        <button type="button" class="btn btn-info action" id="finish">Finish</button>
                     </li>
                     <li class="nav-item">
-                        <button type="button" class="btn btn-danger" id="reset">Reset</button>
+                        <button type="button" class="btn btn-danger action" id="reset">Reset</button>
                     </li>
                 </ul>
             </div>
@@ -54,11 +54,15 @@
         </div>
         <div class="row">
             <div class="col">
-                <select class="form-select">
-                    <option selected>Quick clues</option>
-                    <option value="1">One</option>
-                    <option value="2">Two</option>
-                    <option value="3">Three</option>
+                <select class="form-select" id="shortclues">
+                    <option selected disabled>Quick clues</option>
+                    <optgroup label="Trunk">
+                    <option value="1">There is a padlock on Ruby's trunk. Have you found the key yet?</option>
+                    <option value="2">You've missed a key in the box below the mirror</option>
+                    </optgroup>
+                    <optgroup label="Hat">
+                        <option value="3">Try putting a hat on</option>
+                    </optgroup>
                   </select>
             </div>
             <div class="col">
@@ -66,7 +70,7 @@
                     <textarea class="form-control" placeholder="Clue..." id="cluebox" style="height: 100px"></textarea>
                     <label for="cluebox">Clue...</label>
                 </div>
-                <button type="submit" class="btn btn-primary">Send</button>
+                <button type="submit" class="btn btn-primary" id="cluesubmit">Send</button>
             </div>
         </div>
         <!---       <div class="bg-light p-5 rounded">
@@ -80,6 +84,7 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
         var game = 1;
+        var instance = 1;
         const socket = io({
             transports: ["websocket"]
         });
@@ -98,11 +103,22 @@
             $('#progress').css('width', ((3600 - data.secondsLeft) / 36) + '%')
         });
 
-        $("button").click(function() {
+        $(".action").click(function() {
             var action = $(this).attr('id');
             socket.emit('action', {
                 game: game,
                 action: action
+            });
+        });
+
+        $("#shortclues").change(function() {
+            $("#cluebox").text($("#shortclues option:selected").text());
+        })
+
+        $("#cluesubmit").click(function() {
+            socket.emit('clue', {
+                instance: instance,
+                clue: $("#cluebox").text()
             });
         });
 

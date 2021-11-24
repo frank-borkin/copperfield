@@ -32,6 +32,7 @@
 <body>
     <video autoplay muted loop id="bgVideo"></video>
     <div id="clock"></div>
+    <div id="clue"></div>
 
     <script src="jquery-3.6.0.slim.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
@@ -44,6 +45,12 @@
 
         socket.on('status' + instance, (data) => {
             $("#clock").html(data.time);
+            if (data.clue.length > 0) {
+                $("#clock").html(data.clue);
+                $("#clock").css("font-size", "36px");
+            } else {
+                $("#clock").css("font-size", "128px");
+            }
         });
 
         socket.on("connect", function() {

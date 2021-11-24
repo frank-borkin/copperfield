@@ -14,14 +14,16 @@ server.listen(port, () => {
 
 // Routing
 app.use(express.static(path.join(__dirname, 'public')));
-var timers = Array();
-var state = Array(); //The states are reset, running and stopped. The actions are reset, start, end (lose) and finish (win). Pause/resume were removed.
+var timers = Array(); //per instance
+var state = Array(); //The states are reset, running and stopped. The actions are reset, start, end (lose) and finish (win). Pause/resume were removed. per instance
+var clues = Array(); //per instance
 var instances = Array();
 const dbResult = { games: [{ id: 1, name: 'An Hour to Kill', nodes: 1, instances: [1] }, { id: 2, name: 'The Crazy Cat Lady', nodes: 2, instances: [2, 3] }, { id: 3, name: 'Rob the Bank', nodes: 1, instances: [4] }] };
 
 io.on('connection', (socket) => {
     socket.on('register', (instance, callback) => {
         state[instance] = 'reset';
+        clues[instance] = '';
         setInterval(sendStatus, 1000, instance);
         callback && callback({
             status: "ok",
@@ -50,6 +52,11 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('clue', (data) => {
+        clues[data.instance] = data.clue;
+        setTimeout(() => { clues[data.instance] = ''; }, 30000); //30s
+    });
+
     function sendStatus(instance) {
         var timeLeft = 3600;
         if (state[instance] == 'running') {
@@ -59,7 +66,8 @@ io.on('connection', (socket) => {
         }
         socket.broadcast.emit('status' + instance, { //broadcast to room
             time: padStart(Math.floor(timeLeft / 3600), 2, '0') + ':' + padStart(Math.floor(timeLeft % 3600 / 60), 2, '0') + ':' + padStart(Math.floor(timeLeft % 3600 % 60), 2, '0'),
-            secondsLeft: timeLeft
+            secondsLeft: timeLeft,
+            clue: clues[instance]
         });
     }
 });
