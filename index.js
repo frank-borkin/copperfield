@@ -15,7 +15,7 @@ server.listen(port, () => {
 // Routing
 app.use(express.static(path.join(__dirname, 'public')));
 var timers = Array();
-var state = Array(); //The states are reset, running, paused and stopped. The actions are reset, start, pause, resume, end (lose) and finish (win).
+var state = Array(); //The states are reset, running and stopped. The actions are reset, start, end (lose) and finish (win). Pause/resume were removed.
 var instances = Array();
 const dbResult = { games: [{ id: 1, name: 'An Hour to Kill', nodes: 1, instances: [1] }, { id: 2, name: 'The Crazy Cat Lady', nodes: 2, instances: [2, 3] }, { id: 3, name: 'Rob the Bank', nodes: 1, instances: [4] }] };
 
@@ -42,13 +42,6 @@ io.on('connection', (socket) => {
             state[data.game] = 'running';
             timers[data.game] = date.addHours(new Date(), 1);
         }
-        if (data.action == 'pause') {
-            state[data.game] = 'paused';
-            timers[data.game] = date.addHours(new Date(), 1);
-        }
-        if (data.action == 'resume') {
-            state[data.game] = 'running';
-        }
         if (data.action == 'finish') {
             state[data.game] = 'stopped';
         }
@@ -58,10 +51,11 @@ io.on('connection', (socket) => {
     });
 
     function sendStatus(instance) {
-        var timeLeft = 0;
+        var timeLeft = 3600;
         if (state[instance] == 'running') {
             var now = new Date();
             timeLeft = date.subtract(timers[instance], now).toSeconds();
+            if (timeLeft <= 0) { state[instance] = 'end' }
         }
         socket.broadcast.emit('status' + instance, { //broadcast to room
             time: padStart(Math.floor(timeLeft / 3600), 2, '0') + ':' + padStart(Math.floor(timeLeft % 3600 / 60), 2, '0') + ':' + padStart(Math.floor(timeLeft % 3600 % 60), 2, '0'),
