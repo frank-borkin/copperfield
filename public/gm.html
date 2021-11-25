@@ -14,20 +14,20 @@
         <div class="container-fluid">
             <div class="collapse navbar-collapse" id="navbarCollapse">
                 <ul class="navbar-nav me-auto mb-2 mb-md-0">
-                    <li class="nav-item">
+                    <li class="nav-item dropdown">
                         <select id="games"></select>
+                    </li>
+                    <li class="nav-item" style="color: white;" id="stat">
+                        Unknown
                     </li>
                     <li class="nav-item">
                         <button type="button" class="btn btn-success action" id="start">Start</button>
                     </li>
                     <li class="nav-item">
-                        <button type="button" class="btn btn-warning action" id="pause">Pause</button>
+                        <button type="button" class="btn btn-danger action" id="finish">Finish</button>
                     </li>
                     <li class="nav-item">
-                        <button type="button" class="btn btn-info action" id="finish">Finish</button>
-                    </li>
-                    <li class="nav-item">
-                        <button type="button" class="btn btn-danger action" id="reset">Reset</button>
+                        <button type="button" class="btn btn-info action" id="reset">Reset</button>
                     </li>
                 </ul>
             </div>
@@ -35,13 +35,13 @@
     </nav>
 
     <main class="container" style="padding-top: 75px;">
-        <div class="progress">
-            <span id="p1"></span>
-            <div id="progress1" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="3600"></div>
+        <div class="progress" id="p0" style="display: none;">
+            <span id="plabel0"></span>
+            <div id="progress0" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="3600"></div>
         </div>
-        <div class="progress">
-            <span id="p2"></span>
-            <div id="progress2" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="3600"></div>
+        <div class="progress" id="p1" style="display: none;">
+            <span id="plabel1"></span>
+            <div id="progress1" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="3600"></div>
         </div>
         <div class="row" id="timeline" style="padding-bottom: 25px;">
             <div class="col">Start</div>
@@ -88,12 +88,18 @@
     <script src="bootstrap.bundle.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        var game = 1;
-        var instance = 1;
+        var game = 0;
+        var instance = 0;
         const socket = io({
             transports: ["websocket"]
         });
-        var games = [];
+        var games = [{
+            nodes: 0,
+            instances: [{
+                id: 0,
+                name: 'HTK'
+            }]
+        }];
 
         socket.on("connect", function() {
             socket.emit('gm', (data) => {
@@ -102,12 +108,19 @@
                     $('#games').append('<option value="' + game.id + '">' + game.name + '</option>')
                 });
                 games = data.games;
+                setGame();
             });
         });
 
         socket.on('status', (data) => {
-            $("#progress" + data.instance).html(data.time);
-            $('#progress' + data.instance).css('width', ((3600 - data.secondsLeft) / 36) + '%')
+            game = $("#games option:selected").val();
+            for (var i = 0; i < games[game].nodes; i++) {
+                if (games[game].instances[i].id == data.instance) {
+                    $('#stat').text(data.state);
+                    $("#progress" + data.instance).html(data.time); //fixme
+                    $('#progress' + data.instance).css('width', ((3600 - data.secondsLeft) / 36) + '%');
+                }
+            }
         });
 
         $(".action").click(function() {
@@ -129,10 +142,17 @@
             });
         });
 
-        $("#games").change(function() {
-            game = $("#games option:selected").val();
-            $("#p1").text(games[game - 1].instances[0].name);
-        })
+        function setGame() {
+            $("#p0").css("display", "none");
+            $("#p1").css("display", "none");
+            game = $("#games option:selected").val() || 0;
+            for (var i = 0; i < games[game].nodes; i++) {
+                $("#plabel" + i).text(games[game].instances[i].name);
+                $("#p" + i).css("display", "flex");
+            }
+        }
+
+        $("#games").change(setGame);
     </script>
 </body>
 
