@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: copperfield
+  labels:
+    app: copperfield
+spec:
+  selector:
+    matchLabels:
+      app: copperfield
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: copperfield
+    spec:
+      containers:
+        - name: copperfield
+          image: frankborkin/copperfield
+          imagePullPolicy: Always
+          ports:
+            - name: nodejs
+              containerPort: 3000
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              host: ''
+              path: /status.txt
+              port: 3000
+              scheme: HTTP
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - web
+                topologyKey: kubernetes.io/hostname
