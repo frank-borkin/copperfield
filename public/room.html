@@ -40,19 +40,48 @@
         const socket = io({
             transports: ["websocket"]
         });
+
+        var clueSound;
+        var soundPlaying = false;
+        var lastClue = "";
+
+        function playSound(url) {
+            if (soundPlaying == false) { //By default, the sound will play over and over for each status msg
+                soundPlaying = true;
+                var audio = new Audio(url);
+                audio.addEventListener("canplaythrough", (event) => {
+                    audio.play();
+                });
+            }
+        }
+
+        // Extract ?instance=4. This should match games.json
         const urlParams = new URLSearchParams(window.location.search);
         const instance = urlParams.get('instance');
 
+        // Parse status messages:
+        // time (string of time left, could be empty string to hide the clock)
+        // status (game running, paused, etc)
+        // clue (HTML to display instead of clock)
         socket.on('status', (data) => {
             $("#clock").html(data.time);
             if (data.clue && data.clue.length > 0) {
                 $("#clock").html(data.clue);
                 $("#clock").css("font-size", "36px");
+                if (data.clue != lastClue) {
+                    console.log(lastClue);
+                    playSound(clueSound)
+                    lastClue = data.clue;
+                    soundPlaying = false;
+                }
             } else {
                 $("#clock").css("font-size", "128px");
+                soundPlaying = false;
             }
         });
 
+        // Once the ws connection is there, send a "register" event and get the game data:
+        // background image/video (type & url)
         socket.on("connect", function() {
             socket.emit('register', instance, (data) => {
                 console.log(data.status);
@@ -61,6 +90,7 @@
                 } else {
                     $("body").css("background-image", "url('" + data.bgPath + "')");
                 }
+                clueSound = data.clueSound;
             });
         });
     </script>

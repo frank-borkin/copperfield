@@ -17,8 +17,16 @@ app.use(express.static(path.join(__dirname, 'public')));
 var timers = Array(); //of date objects. Per instance
 var state = Array(); //The states are reset, running and stopped. The actions are reset, start, end (lose) and finish (win). Pause/resume were removed. per instance
 var clues = Array(); //Current clue or empty string. Per instance
-var instances = [{ id: 0, bgType: "pic", bgPath: "backgrounds/21.jpg", game: 0, timerStarted: false }, { id: 1, bgType: "pic", bgPath: "backgrounds/21.jpg", game: 1, timerStarted: false }, { id: 2, bgType: "pic", bgPath: "backgrounds/21.jpg", game: 1, timerStarted: false }, { id: 3, bgType: "pic", bgPath: "backgrounds/21.jpg", game: 2, timerStarted: false }]
-const games = [{ id: 0, name: 'An Hour to Kill', nodes: 1, instances: [{ id: 0, name: 'HTK' }] }, { id: 1, name: 'The Crazy Cat Lady', nodes: 2, instances: [{ id: 1, name: 'Left' }, { id: 2, name: 'Right' }] }, { id: 2, name: 'Rob the Bank', nodes: 1, instances: [{ id: 3, name: 'RTB' }] }];
+var instances = Array();
+const games = require('./config/games.json');
+const sites = require('./config/sites.json');
+
+games.forEach(function(g) {
+    g.instances.forEach(function(i) {
+        instances.push(i);
+    })
+})
+
 
 io.on('connection', (socket) => {
 
@@ -35,7 +43,8 @@ io.on('connection', (socket) => {
         callback && callback({
             status: "ok",
             bgType: instances[i].bgType,
-            bgPath: instances[i].bgPath
+            bgPath: instances[i].bgPath,
+            clueSound: instances[i].clueSound
         });
     });
 
@@ -52,7 +61,7 @@ io.on('connection', (socket) => {
     socket.on('action', (data) => {
         if (data.action == 'start') {
             state[data.game] = 'running';
-            timers[data.game] = date.addHours(new Date(), 1);
+            timers[data.game] = date.addHours(new Date(), 1); //Set the time to 1 hour from now - TODO, use gameTime
         }
         if (data.action == 'finish') {
             state[data.game] = 'stopped';

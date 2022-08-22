@@ -132,13 +132,13 @@
         });
 
         $("#shortclues").change(function() {
-            $("#cluebox").text($("#shortclues option:selected").text());
+            $("#cluebox").val($("#shortclues option:selected").text());
         })
 
         $("#cluesubmit").click(function() {
             socket.emit('clue', {
                 instance: instance,
-                clue: $("#cluebox").text()
+                clue: $("#cluebox").val()
             });
         });
 
