@@ -15,9 +15,10 @@ server.listen(port, () => {
 // Routing
 app.use(express.static(path.join(__dirname, 'public')));
 var timers = Array(); //of date objects. Per instance
-var state = Array(); //The states are reset, running and stopped. The actions are reset, start, end (lose) and finish (win). Pause/resume were removed. per instance
+var state = Array(); //The states are intro, reset, running, win and fail. The actions are intro, reset, start, end (lose) and finish (win). Pause/resume were removed. per instance
 var clues = Array(); //Current clue or empty string. Per instance
 var instances = Array();
+var logs = Array();
 const games = require('./config/games.json');
 const sites = require('./config/sites.json');
 
@@ -44,7 +45,10 @@ io.on('connection', (socket) => {
             status: "ok",
             bgType: instances[i].bgType,
             bgPath: instances[i].bgPath,
-            clueSound: instances[i].clueSound
+            clueSound: instances[i].clueSound,
+            introVideo: instances[i].introVideo,
+            winVideo: instances[i].winVideo,
+            loseVideo: instances[i].loseVideo
         });
     });
 
@@ -59,20 +63,35 @@ io.on('connection', (socket) => {
     });
 
     socket.on('action', (data) => {
+        now = new Date()
+        if (data.action == 'intro') {
+            state[data.instance] = 'intro';
+            logs[data.instance] += `${now} Intro started\n`;
+        }
+        if (data.action == 'post') {
+            state[data.instance] = 'post';
+        }
         if (data.action == 'start') {
-            state[data.game] = 'running';
-            timers[data.game] = date.addHours(new Date(), 1); //Set the time to 1 hour from now - TODO, use gameTime
+            state[data.instance] = 'running';
+            timers[data.instance] = date.addSeconds(new Date(), 30 * 60); //Set the time to 1 hour from now - TODO, use gameTime
+            logs[data.instance] += `${now} Game started\n`;
         }
         if (data.action == 'finish') {
-            state[data.game] = 'stopped';
+            state[data.instance] = 'win';
+            logs[data.instance] += `${now} Team Won\n`;
+            console.log(logs[data.instance]);
+            logs[data.instance] = "";
         }
         if (data.action == 'reset') {
-            state[data.game] = 'reset';
+            state[data.instance] = 'reset';
+            logs[data.instance] += `${now} Game reset\n`;
         }
     });
 
     socket.on('clue', (data) => {
+        now = new Date()
         clues[data.instance] = data.clue;
+        logs[data.instance] += `${now} Clue sent - ${data.clue}\n`;
         setTimeout(() => { clues[data.instance] = ''; }, 30000); //30s
     });
 
@@ -81,7 +100,7 @@ io.on('connection', (socket) => {
         if (state[instance] == 'running') {
             var now = new Date();
             timeLeft = date.subtract(timers[instance], now).toSeconds();
-            if (timeLeft <= 0) { state[instance] = 'end' }
+            if (timeLeft <= 0) { state[instance] = 'fail' }
         }
         socket.to("instance" + instance).emit('status', { //broadcast to room
             instance: instance,

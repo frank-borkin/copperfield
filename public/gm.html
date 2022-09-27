@@ -6,6 +6,60 @@
     <meta charset=UTF-8>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.auth0.com/js/auth0-spa-js/1.20/auth0-spa-js.production.js"></script>
+    <script>
+        let auth0 = null;
+        const fetchAuthConfig = () => fetch("/auth_config.json");
+        const configureClient = async() => {
+            const response = await fetchAuthConfig();
+            const config = await response.json();
+
+            auth0 = await createAuth0Client({
+                domain: config.domain,
+                client_id: config.clientId,
+                redirect_uri: config.redirectUri
+            });
+        };
+        const logout = () => {
+            auth0.logout({
+                returnTo: window.location.origin
+            });
+        };
+
+        window.onload = async() => {
+            await configureClient();
+            const isAuthenticated = await auth0.isAuthenticated();
+            if (!isAuthenticated) {
+                const query = window.location.search;
+                if (query.includes("code=") && query.includes("state=")) {
+                    await auth0.handleRedirectCallback();
+                    window.history.replaceState({}, document.title, "/");
+                    const user = await auth0.getUser();
+                    document.getElementById('user').innerHTML = user.name;
+                } else {
+                    await auth0.loginWithRedirect({
+                        redirect_uri: window.location.origin
+                    });
+                }
+            } else {
+                const user = await auth0.getUser();
+                document.getElementById('user').innerHTML = user.name;
+            }
+        }
+    </script>
+    <style>
+        .progress {
+            height: 24px;
+        }
+        
+        .row>* {
+            padding: 0;
+        }
+        
+        #user {
+            color: white;
+        }
+    </style>
 </head>
 
 <body>
@@ -17,44 +71,56 @@
                     <li class="nav-item dropdown">
                         <select id="games"></select>
                     </li>
-                    <li class="nav-item" style="color: white;" id="stat">
-                        Unknown
-                    </li>
-                    <li class="nav-item">
-                        <button type="button" class="btn btn-success action" id="start">Start</button>
-                    </li>
-                    <li class="nav-item">
-                        <button type="button" class="btn btn-danger action" id="finish">Finish</button>
-                    </li>
-                    <li class="nav-item">
-                        <button type="button" class="btn btn-info action" id="reset">Reset</button>
-                    </li>
                 </ul>
+                <span id="user"></span>
             </div>
         </div>
     </nav>
 
     <main class="container" style="padding-top: 75px;">
-        <div class="progress" id="p0" style="display: none;">
-            <span id="plabel0"></span>
-            <div id="progress0" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="3600"></div>
+        <div class="row" id="p0" style="display: none;">
+            <div class="col" id="plabel0"></div>
+            <div class="progress col-10">
+                <div id="progress0" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="3600"></div>
+            </div>
+            <div class="col">
+                <span class="action" id="intro"><ion-icon name="play-outline"></ion-icon></span>
+                <span class="action" id="finish">
+                <ion-icon name="stop-outline"></ion-icon>
+                </span>
+                <span class="action" id="reset">
+                <ion-icon name="refresh-outline"></ion-icon>
+                </span>
+            </div>
         </div>
-        <div class="progress" id="p1" style="display: none;">
-            <span id="plabel1"></span>
-            <div id="progress1" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="3600"></div>
+
+        <div class="row" id="p1" style="display: none;">
+            <div class="col" id="plabel1"></div>
+            <div class="progress col-10">
+                <div id="progress1" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="3600"></div>
+            </div>
+            <div class="col">
+                <ion-icon name="play-outline"></ion-icon>
+                <ion-icon name="stop-outline"></ion-icon>
+                <ion-icon name="refresh-outline"></ion-icon>
+            </div>
         </div>
-        <div class="row" id="timeline" style="padding-bottom: 25px;">
-            <div class="col">Start</div>
+        <div class="row">
             <div class="col"></div>
-            <div class="col">Nudge 1</div>
-            <div class="col">Nudge 2</div>
-            <div class="col">Decoding</div>
-            <div class="col"></div>
-            <div class="col">Posters</div>
-            <div class="col">Husbands</div>
-            <div class="col"></div>
-            <div class="col">Call Sam</div>
-            <div class="col">UV light</div>
+            <div class="row col-10" id="timeline" style="padding-bottom: 25px;">
+                <div class="col">Start</div>
+                <div class="col"></div>
+                <div class="col">Nudge 1</div>
+                <div class="col">Nudge 2</div>
+                <div class="col">Decoding</div>
+                <div class="col"></div>
+                <div class="col">Posters</div>
+                <div class="col">Husbands</div>
+                <div class="col"></div>
+                <div class="col">Call Sam</div>
+                <div class="col">UV light</div>
+                <div class="col"></div>
+            </div>
             <div class="col"></div>
         </div>
         <div class="row">
@@ -76,12 +142,9 @@
                     <label for="cluebox">Clue...</label>
                 </div>
                 <button type="submit" class="btn btn-primary" id="cluesubmit">Send</button>
+                <button type="submit" class="btn btn-secondary" id="clueclear">Clear</button>
             </div>
         </div>
-        <!---       <div class="bg-light p-5 rounded">
-            <h1>GM stuff</h1>
-            <p class="lead">Blah.</p>
-        </div> -->
     </main>
 
     <script src="jquery-3.6.0.slim.min.js"></script>
@@ -89,7 +152,6 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
         var game = 0;
-        var instance = 0;
         const socket = io({
             transports: ["websocket"]
         });
@@ -104,6 +166,7 @@
         socket.on("connect", function() {
             socket.emit('gm', (data) => {
                 console.log(data.status);
+                $('#games').empty();
                 $.each(data.games, function(i, game) {
                     $('#games').append('<option value="' + game.id + '">' + game.name + '</option>')
                 });
@@ -116,7 +179,7 @@
             game = $("#games option:selected").val();
             for (var i = 0; i < games[game].nodes; i++) {
                 if (games[game].instances[i].id == data.instance) {
-                    $('#stat').text(data.state);
+                    $("#plabel" + i).text(games[game].instances[i].name + ' (' + data.state + ')');
                     $("#progress" + data.instance).html(data.time); //fixme
                     $('#progress' + data.instance).css('width', ((3600 - data.secondsLeft) / 36) + '%');
                 }
@@ -126,7 +189,7 @@
         $(".action").click(function() {
             var action = $(this).attr('id');
             socket.emit('action', {
-                game: game,
+                instance: game, //FIXME - needs to be per-instance, not per game.
                 action: action
             });
         });
@@ -137,8 +200,15 @@
 
         $("#cluesubmit").click(function() {
             socket.emit('clue', {
-                instance: instance,
+                instance: game,
                 clue: $("#cluebox").val()
+            });
+        });
+
+        $("#clueclear").click(function() {
+            socket.emit('clue', {
+                instance: game,
+                clue: ""
             });
         });
 
@@ -150,10 +220,15 @@
                 $("#plabel" + i).text(games[game].instances[i].name);
                 $("#p" + i).css("display", "flex");
             }
+            for (var i = 0; i < games[game].timeline; i++) {
+                $('#timeline').append('<div class="col">' + games[game].timeline[i] + '</div>')
+            }
         }
 
         $("#games").change(setGame);
     </script>
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
 </body>
 
 </html>

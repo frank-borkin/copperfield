@@ -31,6 +31,7 @@
 
 <body>
     <video autoplay muted loop id="bgVideo"></video>
+    <video id="introVideo"></video>
     <div id="clock"></div>
     <div id="clue"></div>
 
@@ -42,8 +43,13 @@
         });
 
         var clueSound;
+        var introVideo;
+        var winVideo;
+        var loseVideo;
         var soundPlaying = false;
+        var vidPlaying = false;
         var lastClue = "";
+        var winTime;
 
         function playSound(url) {
             if (soundPlaying == false) { //By default, the sound will play over and over for each status msg
@@ -64,6 +70,7 @@
         // status (game running, paused, etc)
         // clue (HTML to display instead of clock)
         socket.on('status', (data) => {
+            console.log(data.status);
             $("#clock").html(data.time);
             if (data.clue && data.clue.length > 0) {
                 $("#clock").html(data.clue);
@@ -78,6 +85,53 @@
                 $("#clock").css("font-size", "128px");
                 soundPlaying = false;
             }
+            if (data.state == 'intro' || data.state == 'reset' || data.state == 'win' || data.state == 'fail') {
+                $("#clock").html("");
+            }
+            if (data.state == 'post') {
+                $("#clock").html(winTime);
+            }
+            if (data.state == 'intro') {
+                if (vidPlaying == false) {
+                    vidPlaying = true;
+                    v = document.getElementById('introVideo');
+                    v.width = $(window).width();
+                    v.height = $(window).height();
+                    v.src = introVideo;
+                    $("#introVideo").show();
+                    v.play();
+
+                    v.addEventListener("ended", (event) => {
+                        socket.emit('action', {
+                            instance: instance,
+                            action: 'start'
+                        });
+                        $("#introVideo").hide();
+                        vidPlaying = false;
+                    });
+                }
+            }
+            if (data.state == 'win') {
+                if (vidPlaying == false) {
+                    winTime = data.time;
+                    vidPlaying = true;
+                    v = document.getElementById('introVideo');
+                    v.width = $(window).width();
+                    v.height = $(window).height();
+                    v.src = winVideo;
+                    $("#introVideo").show();
+                    v.play();
+
+                    v.addEventListener("ended", (event) => {
+                        socket.emit('action', {
+                            instance: instance,
+                            action: 'post'
+                        });
+                        $("#introVideo").hide();
+                        vidPlaying = false;
+                    });
+                }
+            }
         });
 
         // Once the ws connection is there, send a "register" event and get the game data:
@@ -91,6 +145,9 @@
                     $("body").css("background-image", "url('" + data.bgPath + "')");
                 }
                 clueSound = data.clueSound;
+                introVideo = data.introVideo;
+                winVideo = data.winVideo;
+                loseVideo = data.loseVideo;
             });
         });
     </script>

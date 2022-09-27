@@ -1,0 +1,5 @@
+{
+    "domain": "xyu.eu.auth0.com",
+    "clientId": "tLIXXXXXXXXXXXXXXXXXXXXXXxxoB4d",
+    "redirectUri": "http://localhost:3000/gm.html"
+}
