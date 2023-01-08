@@ -1,9 +1,11 @@
 # copperfield
 Copperfield is OSS Escape Room Management.
 
-## How to use
+## How to use (Dev / Test)
 
 ```
+copy the example files in config/
+drop the appropriate files into media/
 $ npm ci
 $ npm start
 ```
