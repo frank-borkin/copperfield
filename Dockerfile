@@ -3,8 +3,8 @@ WORKDIR /usr/src/app
 COPY . /usr/src/app
 RUN npm install
 
-FROM gcr.io/distroless/nodejs:16
+FROM gcr.io/distroless/nodejs20-debian11
 EXPOSE 3000
 WORKDIR /usr/src/app
-CMD [ "node", "index.js" ]
+CMD [ "/usr/src/app/index.js" ]
 COPY --from=build /usr/src/app /usr/src/app
