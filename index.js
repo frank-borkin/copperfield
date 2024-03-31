@@ -20,7 +20,7 @@ var clues = Array(); //Current clue or empty string. Per instance
 var instances = Array();
 var logs = Array();
 const games = require('./config/games.json');
-const sites = require('./config/sites.json');
+//const sites = require('./config/sites.json');
 
 games.forEach(function(g) {
     g.instances.forEach(function(i) {
@@ -63,10 +63,10 @@ io.on('connection', (socket) => {
     });
 
     socket.on('action', (data) => {
-        now = new Date()
+        const now = new Date().toISOString()
         if (data.action == 'intro') {
             state[data.instance] = 'intro';
-            logs[data.instance] += `${now} Intro started\n`;
+            logs[data.instance] += `${now} ${data.gm} Intro started\n`;
         }
         if (data.action == 'post') {
             state[data.instance] = 'post';
@@ -74,24 +74,28 @@ io.on('connection', (socket) => {
         if (data.action == 'start') {
             state[data.instance] = 'running';
             timers[data.instance] = date.addSeconds(new Date(), 30 * 60); //Set the time to 1 hour from now - TODO, use gameTime
-            logs[data.instance] += `${now} Game started\n`;
+            logs[data.instance] += `${now} ${data.gm} Game started\n`;
         }
         if (data.action == 'finish') {
             state[data.instance] = 'win';
-            logs[data.instance] += `${now} Team Won\n`;
+            logs[data.instance] += `${now} ${data.gm} Team Won\n`;
             console.log(logs[data.instance]);
             logs[data.instance] = "";
         }
         if (data.action == 'reset') {
             state[data.instance] = 'reset';
-            logs[data.instance] += `${now} Game reset\n`;
+            logs[data.instance] += `${now} ${data.gm} Game reset\n`;
         }
     });
 
     socket.on('clue', (data) => {
-        now = new Date()
+        const now = new Date().toISOString()
         clues[data.instance] = data.clue;
-        logs[data.instance] += `${now} Clue sent - ${data.clue}\n`;
+        if (data.clue == "") {
+            logs[data.instance] += `${now} ${data.gm} Clue cleared\n`;
+        }
+        else
+        { logs[data.instance] += `${now} ${data.gm} Clue sent - ${data.clue}\n`; }
         setTimeout(() => { clues[data.instance] = ''; }, 30000); //30s
     });
 

@@ -190,7 +190,8 @@
             var action = $(this).attr('id');
             socket.emit('action', {
                 instance: game, //FIXME - needs to be per-instance, not per game.
-                action: action
+                action: action,
+                gm: document.getElementById('user').innerHTML
             });
         });
 
@@ -201,14 +202,16 @@
         $("#cluesubmit").click(function() {
             socket.emit('clue', {
                 instance: game,
-                clue: $("#cluebox").val()
+                clue: $("#cluebox").val(),
+                gm: document.getElementById('user').innerHTML
             });
         });
 
         $("#clueclear").click(function() {
             socket.emit('clue', {
                 instance: game,
-                clue: ""
+                clue: "",
+                gm: document.getElementById('user').innerHTML
             });
         });
 
