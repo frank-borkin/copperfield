@@ -16,37 +16,43 @@ const { Logtail } = require('@logtail/node')
 
 const { LogtailTransport } = require('@logtail/winston')
 
-const logtail = new Logtail(process.env.LOGTAIL_TOKEN)
+var winston_transports = []
+winston_transports.push(
+    new winston.transports.Console({
+        format: combine(
+            colorize({ all: true }),
+            timestamp({
+                format: 'YYYY-MM-DD hh:mm:ss.SSS',
+            }),
+            align(),
+            printf(({ message, timestamp, ...metadata }) => {
+                let out = `[${timestamp}]`
+                if (metadata?.game) {
+                    out = out + ' ' + metadata.game
+                }
+                if (metadata?.gm) {
+                    out = out + ' ' + metadata.gm
+                }
+                out = out + ' ' + message
+                if (metadata?.clue) {
+                    out = out + ' ' + metadata.clue
+                }
+                return out
+            })
+        ),
+    })
+)
+
+if (process.env.LOGTAIL_TOKEN) {
+    winston_transports.push(
+        new LogtailTransport(new Logtail(process.env.LOGTAIL_TOKEN))
+    )
+}
 
 const logger = winston.createLogger({
     level: process.env.LOG_LEVEL || 'info',
     format: combine(errors({ stack: true }), timestamp(), json()),
-    transports: [
-        new winston.transports.Console({
-            format: combine(
-                colorize({ all: true }),
-                timestamp({
-                    format: 'YYYY-MM-DD hh:mm:ss.SSS',
-                }),
-                align(),
-                printf(({ message, timestamp, ...metadata }) => {
-                    let out = `[${timestamp}]`
-                    if (metadata?.game) {
-                        out = out + ' ' + metadata.game
-                    }
-                    if (metadata?.gm) {
-                        out = out + ' ' + metadata.gm
-                    }
-                    out = out + ' ' + message
-                    if (metadata?.clue) {
-                        out = out + ' ' + metadata.clue
-                    }
-                    return out
-                })
-            ),
-        }),
-        new LogtailTransport(logtail),
-    ],
+    transports: winston_transports,
 })
 
 server.listen(port, () => {
