@@ -1,21 +1,15 @@
-// Setup basic express server
-const express = require('express')
-const app = express()
-const path = require('path')
-const server = require('http').createServer(app)
-const io = require('socket.io')(server)
-const port = process.env.PORT || 3000
+const { Logtail } = require('@logtail/node')
+const { LogtailTransport } = require('@logtail/winston')
 const date = require('date-and-time')
+const express = require('express')
 const padStart = require('string.prototype.padstart')
+const path = require('path')
 const winston = require('winston')
 
 const { combine, timestamp, printf, colorize, align, json, errors } =
     winston.format
 
-const { Logtail } = require('@logtail/node')
-
-const { LogtailTransport } = require('@logtail/winston')
-
+// Gives us something like [2024-04-01 04:15:34.906] MyGame SomeGM Clue sent Try the key in another lock.
 var winston_transports = []
 winston_transports.push(
     new winston.transports.Console({
@@ -43,6 +37,7 @@ winston_transports.push(
     })
 )
 
+// Only send to logtail if we're given a token
 if (process.env.LOGTAIL_TOKEN) {
     winston_transports.push(
         new LogtailTransport(new Logtail(process.env.LOGTAIL_TOKEN))
@@ -55,12 +50,17 @@ const logger = winston.createLogger({
     transports: winston_transports,
 })
 
+//Setup express
+const port = process.env.PORT || 3000
+const app = express()
+const server = require('http').createServer(app)
+const io = require('socket.io')(server)
 server.listen(port, () => {
     logger.info('Server started')
 })
-
-// Routing
 app.use(express.static(path.join(__dirname, 'public')))
+
+// State management.
 var timers = Array() //of date objects. Per instance
 var state = Array() //The states are intro, reset, running, win and fail. The actions are intro, reset, start, end (lose) and finish (win). Pause/resume were removed. per instance
 var clues = Array() //Current clue or empty string. Per instance
@@ -68,6 +68,7 @@ var instances = Array()
 const games = require('./config/games.json')
 //const sites = require('./config/sites.json');
 
+// Populate the instances array with the game instances we have on this site. The ID's may not be sequential.
 games.forEach(function (g) {
     g.instances.forEach(function (i) {
         instances.push(i)
@@ -75,7 +76,10 @@ games.forEach(function (g) {
 })
 
 io.on('connection', (socket) => {
+    // When a room client connects
     socket.on('register', (instance, callback) => {
+        // Find the instance number in the instances array, get the index into i
+        // TODO Cleaner way of doing this
         socket.username = instance
         var i = 0
         for (var j = 0; j < instances.length; j++) {
@@ -84,7 +88,9 @@ io.on('connection', (socket) => {
                 break
             }
         }
+        // Socket name is instance0, instance1, etc
         socket.join('instance' + instance)
+        // Tell the client the things it needs to know initially
         callback &&
             callback({
                 status: 'ok',
@@ -97,10 +103,13 @@ io.on('connection', (socket) => {
             })
     })
 
+    // When a GM connect
     socket.on('gm', (callback) => {
+        // Connect them to each of the instances on site
         instances.forEach(function (i) {
             socket.join('instance' + i.id)
         })
+        // And give them the game list
         callback &&
             callback({
                 status: 'ok',
@@ -108,6 +117,7 @@ io.on('connection', (socket) => {
             })
     })
 
+    // This is a bit of a FSM
     socket.on('action', (data) => {
         if (data.action == 'intro') {
             state[data.instance] = 'intro'
@@ -121,7 +131,12 @@ io.on('connection', (socket) => {
         }
         if (data.action == 'start') {
             state[data.instance] = 'running'
-            timers[data.instance] = date.addSeconds(new Date(), 30 * 60) //Set the time to 1 hour from now - TODO, use gameTime
+            // Set the end time of the game to gamelength seconds from now.
+            // We do this _after_ the intro finishes
+            timers[data.instance] = date.addSeconds(
+                new Date(),
+                instances[data.instance].gamelength
+            )
             logger.info('Game started', {
                 gm: data.gm,
                 game: games[data.instance].name,
@@ -143,6 +158,7 @@ io.on('connection', (socket) => {
         }
     })
 
+    // Am empty string clears the screen, anything else is a clue
     socket.on('clue', (data) => {
         clues[data.instance] = data.clue
         if (data.clue == '') {
@@ -159,11 +175,15 @@ io.on('connection', (socket) => {
         }
         setTimeout(() => {
             clues[data.instance] = ''
+            logger.info('Clue auto-cleared', {
+                gm: data.gm,
+                game: games[data.instance].name,
+            })
         }, 30000) //30s
     })
 
     function sendStatus(instance) {
-        var timeLeft = 3600
+        var timeLeft = instances[instance].gamelength //Default
         if (state[instance] == 'running') {
             var now = new Date()
             timeLeft = date.subtract(timers[instance], now).toSeconds()
@@ -171,9 +191,10 @@ io.on('connection', (socket) => {
                 state[instance] = 'fail'
             }
         }
+        // Socket name is instance0, instance1, etc
         socket.to('instance' + instance).emit('status', {
-            //broadcast to room
             instance: instance,
+            // We build the clock on our side as a string
             time:
                 padStart(Math.floor(timeLeft / 3600), 2, '0') +
                 ':' +
@@ -187,6 +208,7 @@ io.on('connection', (socket) => {
     }
 
     for (var j = 0; j < instances.length; j++) {
+        // Send updates every second. Ensure we're only doing it once per instance.
         if (instances[j].timerStarted == false) {
             instances[j].timerStarted = true
             state[j] = 'reset'
