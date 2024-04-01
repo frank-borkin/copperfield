@@ -20,7 +20,6 @@ const logtail = new Logtail(process.env.LOGTAIL_TOKEN)
 
 const logger = winston.createLogger({
     level: process.env.LOG_LEVEL || 'info',
-    defaultMeta: { service: 'user-service' },
     format: combine(errors({ stack: true }), timestamp(), json()),
     transports: [
         new winston.transports.Console({
