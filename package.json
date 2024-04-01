@@ -1,16 +1,20 @@
 {
     "name": "copperfield",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "description": "An Escape Room Management System",
     "main": "index.js",
     "author": "Frank Borkin",
     "private": true,
     "license": "GPL-3.0-or-later",
     "dependencies": {
+        "@logtail/node": "^0.4.21",
+        "@logtail/winston": "^0.4.21",
         "date-and-time": "^3.1.1",
         "express": "^4.19.2",
+        "prettier": "^3.2.5",
         "socket.io": "^4.7.5",
-        "string.prototype.padstart": "^3.1.6"
+        "string.prototype.padstart": "^3.1.6",
+        "winston": "^3.13.0"
     },
     "scripts": {
         "start": "node index.js",
@@ -18,5 +22,11 @@
     },
     "devDependencies": {
         "eslint": "^8.57.0"
+    },
+    "prettier": {
+        "trailingComma": "es5",
+        "tabWidth": 4,
+        "semi": false,
+        "singleQuote": true
     }
 }
