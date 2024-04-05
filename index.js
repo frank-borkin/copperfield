@@ -1,5 +1,7 @@
 const { Logtail } = require('@logtail/node')
 const { LogtailTransport } = require('@logtail/winston')
+const Sentry = require('@sentry/node')
+const { nodeProfilingIntegration } = require('@sentry/profiling-node')
 const date = require('date-and-time')
 const express = require('express')
 const padStart = require('string.prototype.padstart')
@@ -53,12 +55,33 @@ const logger = winston.createLogger({
 //Setup express
 const port = process.env.PORT || 3000
 const app = express()
+
+//Setup Sentry
+Sentry.init({
+    dsn: 'https://eec41f24db2931f17934d7b9ee68aee4@o316574.ingest.us.sentry.io/4507034775257088',
+    integrations: [
+        // enable HTTP calls tracing
+        new Sentry.Integrations.Http({ tracing: true }),
+        // enable Express.js middleware tracing
+        new Sentry.Integrations.Express({ app }),
+        nodeProfilingIntegration(),
+    ],
+    // Performance Monitoring
+    tracesSampleRate: 1.0, //  Capture 100% of the transactions
+    // Set sampling rate for profiling - this is relative to tracesSampleRate
+    profilesSampleRate: 1.0,
+})
+
+app.use(Sentry.Handlers.requestHandler())
+app.use(Sentry.Handlers.tracingHandler())
+app.use(express.static(path.join(__dirname, 'public')))
+app.use(Sentry.Handlers.errorHandler())
+
 const server = require('http').createServer(app)
 const io = require('socket.io')(server)
 server.listen(port, () => {
     logger.info('Server started')
 })
-app.use(express.static(path.join(__dirname, 'public')))
 
 // State management.
 var timers = Array() //of date objects. Per instance

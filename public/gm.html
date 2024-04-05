@@ -6,7 +6,7 @@
     <meta charset=UTF-8>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.auth0.com/js/auth0-spa-js/1.20/auth0-spa-js.production.js"></script>
+    <script src="https://cdn.auth0.com/js/auth0-spa-js/2.1/auth0-spa-js.production.js"></script>
     <script>
         let auth0 = null;
         const fetchAuthConfig = () => fetch("/auth_config.json");
@@ -17,34 +17,38 @@
             auth0 = await createAuth0Client({
                 domain: config.domain,
                 client_id: config.clientId,
-                redirect_uri: config.redirectUri
+                redirect_uri: window.location.href
             });
         };
         const logout = () => {
             auth0.logout({
-                returnTo: window.location.origin
+                returnTo: window.location.href
             });
         };
 
-        window.onload = async() => {
+        const login = async() => {
             await configureClient();
             const isAuthenticated = await auth0.isAuthenticated();
             if (!isAuthenticated) {
                 const query = window.location.search;
                 if (query.includes("code=") && query.includes("state=")) {
                     await auth0.handleRedirectCallback();
-                    window.history.replaceState({}, document.title, "/");
+                    window.history.replaceState({}, document.title, "/gm.html");
                     const user = await auth0.getUser();
                     document.getElementById('user').innerHTML = user.name;
                 } else {
                     await auth0.loginWithRedirect({
-                        redirect_uri: window.location.origin
+                        redirect_uri: window.location.href
                     });
                 }
             } else {
                 const user = await auth0.getUser();
                 document.getElementById('user').innerHTML = user.name;
-            }
+            }           
+        }
+
+        window.onload = async() => {
+            await login();
         }
     </script>
     <style>
@@ -84,12 +88,12 @@
                 <div id="progress0" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="3600"></div>
             </div>
             <div class="col">
-                <span class="action" id="intro"><ion-icon name="play-outline"></ion-icon></span>
+                <span class="action" id="intro"><ion-icon name="play-outline" aria-label="Start Game" style="color: green; font-weight: bold;"></ion-icon></span>
                 <span class="action" id="finish">
-                <ion-icon name="stop-outline"></ion-icon>
+                <ion-icon name="stop-outline" aria-label="Stop Game" style="color: red; font-weight: bold;"></ion-icon>
                 </span>
                 <span class="action" id="reset">
-                <ion-icon name="refresh-outline"></ion-icon>
+                <ion-icon name="refresh-outline" aria-label="Reset Game" style="color: blue; font-weight: bold;"></ion-icon>
                 </span>
             </div>
         </div>
@@ -100,9 +104,9 @@
                 <div id="progress1" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="3600"></div>
             </div>
             <div class="col">
-                <ion-icon name="play-outline"></ion-icon>
-                <ion-icon name="stop-outline"></ion-icon>
-                <ion-icon name="refresh-outline"></ion-icon>
+                <ion-icon name="play-outline" aria-label="Start Game"></ion-icon>
+                <ion-icon name="stop-outline" aria-label="Stop Game"></ion-icon>
+                <ion-icon name="refresh-outline" aria-label="Reset Game"></ion-icon>
             </div>
         </div>
         <div class="row">
@@ -226,12 +230,14 @@
             for (var i = 0; i < games[game].timeline; i++) {
                 $('#timeline').append('<div class="col">' + games[game].timeline[i] + '</div>')
             }
+            $("#shortclues").empty();
+            $("#shortclues").append("<option selected disabled>Quick clues</option>");
         }
 
         $("#games").change(setGame);
     </script>
-    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
-    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
 </body>
 
 </html>
