@@ -186,21 +186,7 @@
             </div>
             <div class="row">
                 <div class="col">
-                    <select class="form-select" id="shortclues">
-                        <option selected disabled>Quick clues</option>
-                        <optgroup label="Trunk">
-                            <option value="1">
-                                There is a padlock on Ruby's trunk. Have you
-                                found the key yet?
-                            </option>
-                            <option value="2">
-                                You've missed a key in the box below the mirror
-                            </option>
-                        </optgroup>
-                        <optgroup label="Hat">
-                            <option value="3">Try putting a hat on</option>
-                        </optgroup>
-                    </select>
+                    <select class="form-select" id="shortclues"></select>
                 </div>
                 <div class="col">
                     <div class="form-floating">
@@ -252,7 +238,6 @@
 
             socket.on('connect', function () {
                 socket.emit('gm', (data) => {
-                    console.log(data.status)
                     $('#games').empty()
                     $.each(data.games, function (i, game) {
                         $('#games').append(
@@ -335,6 +320,18 @@
                 $('#shortclues').append(
                     '<option selected disabled>Quick clues</option>'
                 )
+                $.each(games[game].clues, function (cluegrougroup, clue) {
+                    $('#shortclues').append(
+                        `<optgroup label="${cluegrougroup}">`
+                    )
+                    $.each(clue, function (i, c) {
+                        $('#shortclues').append(
+                            `<option value="${i}">${c}</option>`
+                        )
+                    })
+
+                    $('#shortclues').append('</optgroup>')
+                })
             }
 
             $('#games').change(setGame)
