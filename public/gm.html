@@ -168,20 +168,7 @@
                     class="row col-10"
                     id="timeline"
                     style="padding-bottom: 25px"
-                >
-                    <div class="col">Start</div>
-                    <div class="col"></div>
-                    <div class="col">Nudge 1</div>
-                    <div class="col">Nudge 2</div>
-                    <div class="col">Decoding</div>
-                    <div class="col"></div>
-                    <div class="col">Posters</div>
-                    <div class="col">Husbands</div>
-                    <div class="col"></div>
-                    <div class="col">Call Sam</div>
-                    <div class="col">UV light</div>
-                    <div class="col"></div>
-                </div>
+                ></div>
                 <div class="col"></div>
             </div>
             <div class="row">
@@ -311,11 +298,10 @@
                     $('#plabel' + i).text(games[game].instances[i].name)
                     $('#p' + i).css('display', 'flex')
                 }
-                for (var i = 0; i < games[game].timeline; i++) {
-                    $('#timeline').append(
-                        '<div class="col">' + games[game].timeline[i] + '</div>'
-                    )
-                }
+                $('#timeline').empty()
+                $.each(games[game].timeline, function (i, t) {
+                    $('#timeline').append(`<div class="col">${t}</div>`)
+                })
                 $('#shortclues').empty()
                 $('#shortclues').append(
                     '<option selected disabled>Quick clues</option>'
