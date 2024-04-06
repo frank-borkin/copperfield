@@ -1,243 +1,351 @@
 <!doctype html>
 <html lang="en">
+    <head>
+        <title>Copperfield</title>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <script
+            src="https://js.sentry-cdn.com/59257458a9ad2ce92828474ecf1f2a9d.min.js"
+            crossorigin="anonymous"
+        ></script>
+        <link href="bootstrap.min.css" rel="stylesheet" />
+        <script src="https://cdn.auth0.com/js/auth0-spa-js/2.1/auth0-spa-js.production.js"></script>
+        <script>
+            let auth0Client = null
+            const fetchAuthConfig = () => fetch('/auth_config.json')
+            const configureClient = async () => {
+                const response = await fetchAuthConfig()
+                const config = await response.json()
+                //await new Promise((r) => setTimeout(r, 10000))
+                auth0Client = new auth0.Auth0Client({
+                    domain: config.domain,
+                    clientId: config.clientId,
+                })
+            }
+            const logout = () => {
+                auth0Client.logout({
+                    logoutParams: {
+                        returnTo: window.location.origin + '/gm.html',
+                    },
+                })
+            }
 
-<head>
-    <title>Copperfield</title>
-    <meta charset=UTF-8>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.auth0.com/js/auth0-spa-js/2.1/auth0-spa-js.production.js"></script>
-    <script>
-        let auth0 = null;
-        const fetchAuthConfig = () => fetch("/auth_config.json");
-        const configureClient = async() => {
-            const response = await fetchAuthConfig();
-            const config = await response.json();
-
-            auth0 = await createAuth0Client({
-                domain: config.domain,
-                client_id: config.clientId,
-                redirect_uri: window.location.href
-            });
-        };
-        const logout = () => {
-            auth0.logout({
-                returnTo: window.location.href
-            });
-        };
-
-        const login = async() => {
-            await configureClient();
-            const isAuthenticated = await auth0.isAuthenticated();
-            if (!isAuthenticated) {
-                const query = window.location.search;
-                if (query.includes("code=") && query.includes("state=")) {
-                    await auth0.handleRedirectCallback();
-                    window.history.replaceState({}, document.title, "/gm.html");
-                    const user = await auth0.getUser();
-                    document.getElementById('user').innerHTML = user.name;
+            window.onload = async () => {
+                await configureClient()
+                const isAuthenticated = await auth0Client.isAuthenticated()
+                if (!isAuthenticated) {
+                    const query = window.location.search
+                    if (query.includes('code=') && query.includes('state=')) {
+                        await auth0Client.handleRedirectCallback()
+                        window.history.replaceState(
+                            {},
+                            document.title,
+                            '/gm.html'
+                        )
+                        const user = await auth0Client.getUser()
+                        document.getElementById('user').innerHTML =
+                            user.name +
+                            ' <img src="' +
+                            user.picture +
+                            '" height="22">'
+                    } else {
+                        await auth0Client.loginWithRedirect({
+                            authorizationParams: {
+                                redirect_uri:
+                                    window.location.origin + '/gm.html',
+                            },
+                        })
+                    }
                 } else {
-                    await auth0.loginWithRedirect({
-                        redirect_uri: window.location.href
-                    });
+                    const user = await auth0Client.getUser()
+                    document.getElementById('user').innerHTML =
+                        user.name +
+                        ' <img src="' +
+                        user.picture +
+                        '" height="22">'
                 }
-            } else {
-                const user = await auth0.getUser();
-                document.getElementById('user').innerHTML = user.name;
-            }           
-        }
+            }
+        </script>
+        <style>
+            .progress {
+                height: 24px;
+            }
 
-        window.onload = async() => {
-            await login();
-        }
-    </script>
-    <style>
-        .progress {
-            height: 24px;
-        }
-        
-        .row>* {
-            padding: 0;
-        }
-        
-        #user {
-            color: white;
-        }
-    </style>
-</head>
+            .row > * {
+                padding: 0;
+            }
 
-<body>
+            #user {
+                color: white;
+            }
+        </style>
+    </head>
 
-    <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
-        <div class="container-fluid">
-            <div class="collapse navbar-collapse" id="navbarCollapse">
-                <ul class="navbar-nav me-auto mb-2 mb-md-0">
-                    <li class="nav-item dropdown">
-                        <select id="games"></select>
-                    </li>
-                </ul>
-                <span id="user"></span>
-            </div>
-        </div>
-    </nav>
-
-    <main class="container" style="padding-top: 75px;">
-        <div class="row" id="p0" style="display: none;">
-            <div class="col" id="plabel0"></div>
-            <div class="progress col-10">
-                <div id="progress0" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="3600"></div>
-            </div>
-            <div class="col">
-                <span class="action" id="intro"><ion-icon name="play-outline" aria-label="Start Game" style="color: green; font-weight: bold;"></ion-icon></span>
-                <span class="action" id="finish">
-                <ion-icon name="stop-outline" aria-label="Stop Game" style="color: red; font-weight: bold;"></ion-icon>
-                </span>
-                <span class="action" id="reset">
-                <ion-icon name="refresh-outline" aria-label="Reset Game" style="color: blue; font-weight: bold;"></ion-icon>
-                </span>
-            </div>
-        </div>
-
-        <div class="row" id="p1" style="display: none;">
-            <div class="col" id="plabel1"></div>
-            <div class="progress col-10">
-                <div id="progress1" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="3600"></div>
-            </div>
-            <div class="col">
-                <ion-icon name="play-outline" aria-label="Start Game"></ion-icon>
-                <ion-icon name="stop-outline" aria-label="Stop Game"></ion-icon>
-                <ion-icon name="refresh-outline" aria-label="Reset Game"></ion-icon>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col"></div>
-            <div class="row col-10" id="timeline" style="padding-bottom: 25px;">
-                <div class="col">Start</div>
-                <div class="col"></div>
-                <div class="col">Nudge 1</div>
-                <div class="col">Nudge 2</div>
-                <div class="col">Decoding</div>
-                <div class="col"></div>
-                <div class="col">Posters</div>
-                <div class="col">Husbands</div>
-                <div class="col"></div>
-                <div class="col">Call Sam</div>
-                <div class="col">UV light</div>
-                <div class="col"></div>
-            </div>
-            <div class="col"></div>
-        </div>
-        <div class="row">
-            <div class="col">
-                <select class="form-select" id="shortclues">
-                    <option selected disabled>Quick clues</option>
-                    <optgroup label="Trunk">
-                    <option value="1">There is a padlock on Ruby's trunk. Have you found the key yet?</option>
-                    <option value="2">You've missed a key in the box below the mirror</option>
-                    </optgroup>
-                    <optgroup label="Hat">
-                        <option value="3">Try putting a hat on</option>
-                    </optgroup>
-                  </select>
-            </div>
-            <div class="col">
-                <div class="form-floating">
-                    <textarea class="form-control" placeholder="Clue..." id="cluebox" style="height: 100px"></textarea>
-                    <label for="cluebox">Clue...</label>
+    <body>
+        <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+            <div class="container-fluid">
+                <div class="collapse navbar-collapse" id="navbarCollapse">
+                    <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                        <li class="nav-item dropdown">
+                            <select id="games"></select>
+                        </li>
+                    </ul>
+                    <span id="user"></span>
                 </div>
-                <button type="submit" class="btn btn-primary" id="cluesubmit">Send</button>
-                <button type="submit" class="btn btn-secondary" id="clueclear">Clear</button>
             </div>
-        </div>
-    </main>
+        </nav>
 
-    <script src="jquery-3.6.0.slim.min.js"></script>
-    <script src="bootstrap.bundle.min.js"></script>
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        var game = 0;
-        const socket = io({
-            transports: ["websocket"]
-        });
-        var games = [{
-            nodes: 0,
-            instances: [{
-                id: 0,
-                name: 'HTK'
-            }]
-        }];
+        <main class="container" style="padding-top: 75px">
+            <div class="row" id="p0" style="display: none">
+                <div class="col" id="plabel0"></div>
+                <div class="progress col-10">
+                    <div
+                        id="progress0"
+                        class="progress-bar progress-bar-striped progress-bar-animated"
+                        role="progressbar"
+                        style="width: 0%"
+                        aria-valuenow="0"
+                        aria-valuemin="0"
+                        aria-valuemax="3600"
+                    ></div>
+                </div>
+                <div class="col">
+                    <span class="action" id="intro"
+                        ><ion-icon
+                            name="play-outline"
+                            aria-label="Start Game"
+                            style="color: green; font-weight: bold"
+                        ></ion-icon
+                    ></span>
+                    <span class="action" id="finish">
+                        <ion-icon
+                            name="stop-outline"
+                            aria-label="Stop Game"
+                            style="color: red; font-weight: bold"
+                        ></ion-icon>
+                    </span>
+                    <span class="action" id="reset">
+                        <ion-icon
+                            name="refresh-outline"
+                            aria-label="Reset Game"
+                            style="color: blue; font-weight: bold"
+                        ></ion-icon>
+                    </span>
+                </div>
+            </div>
 
-        socket.on("connect", function() {
-            socket.emit('gm', (data) => {
-                console.log(data.status);
-                $('#games').empty();
-                $.each(data.games, function(i, game) {
-                    $('#games').append('<option value="' + game.id + '">' + game.name + '</option>')
-                });
-                games = data.games;
-                setGame();
-            });
-        });
+            <div class="row" id="p1" style="display: none">
+                <div class="col" id="plabel1"></div>
+                <div class="progress col-10">
+                    <div
+                        id="progress1"
+                        class="progress-bar progress-bar-striped progress-bar-animated"
+                        role="progressbar"
+                        style="width: 0%"
+                        aria-valuenow="0"
+                        aria-valuemin="0"
+                        aria-valuemax="3600"
+                    ></div>
+                </div>
+                <div class="col">
+                    <ion-icon
+                        name="play-outline"
+                        aria-label="Start Game"
+                    ></ion-icon>
+                    <ion-icon
+                        name="stop-outline"
+                        aria-label="Stop Game"
+                    ></ion-icon>
+                    <ion-icon
+                        name="refresh-outline"
+                        aria-label="Reset Game"
+                    ></ion-icon>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col"></div>
+                <div
+                    class="row col-10"
+                    id="timeline"
+                    style="padding-bottom: 25px"
+                >
+                    <div class="col">Start</div>
+                    <div class="col"></div>
+                    <div class="col">Nudge 1</div>
+                    <div class="col">Nudge 2</div>
+                    <div class="col">Decoding</div>
+                    <div class="col"></div>
+                    <div class="col">Posters</div>
+                    <div class="col">Husbands</div>
+                    <div class="col"></div>
+                    <div class="col">Call Sam</div>
+                    <div class="col">UV light</div>
+                    <div class="col"></div>
+                </div>
+                <div class="col"></div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <select class="form-select" id="shortclues">
+                        <option selected disabled>Quick clues</option>
+                        <optgroup label="Trunk">
+                            <option value="1">
+                                There is a padlock on Ruby's trunk. Have you
+                                found the key yet?
+                            </option>
+                            <option value="2">
+                                You've missed a key in the box below the mirror
+                            </option>
+                        </optgroup>
+                        <optgroup label="Hat">
+                            <option value="3">Try putting a hat on</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div class="col">
+                    <div class="form-floating">
+                        <textarea
+                            class="form-control"
+                            placeholder="Clue..."
+                            id="cluebox"
+                            style="height: 100px"
+                        ></textarea>
+                        <label for="cluebox">Clue...</label>
+                    </div>
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                        id="cluesubmit"
+                    >
+                        Send
+                    </button>
+                    <button
+                        type="submit"
+                        class="btn btn-secondary"
+                        id="clueclear"
+                    >
+                        Clear
+                    </button>
+                </div>
+            </div>
+        </main>
 
-        socket.on('status', (data) => {
-            game = $("#games option:selected").val();
-            for (var i = 0; i < games[game].nodes; i++) {
-                if (games[game].instances[i].id == data.instance) {
-                    $("#plabel" + i).text(games[game].instances[i].name + ' (' + data.state + ')');
-                    $("#progress" + data.instance).html(data.time); //fixme
-                    $('#progress' + data.instance).css('width', ((3600 - data.secondsLeft) / 36) + '%');
+        <script src="jquery-3.6.0.slim.min.js"></script>
+        <script src="bootstrap.bundle.min.js"></script>
+        <script src="/socket.io/socket.io.js"></script>
+        <script>
+            var game = 0
+            const socket = io({
+                transports: ['websocket'],
+            })
+            var games = [
+                {
+                    nodes: 0,
+                    instances: [
+                        {
+                            id: 0,
+                            name: 'HTK',
+                        },
+                    ],
+                },
+            ]
+
+            socket.on('connect', function () {
+                socket.emit('gm', (data) => {
+                    console.log(data.status)
+                    $('#games').empty()
+                    $.each(data.games, function (i, game) {
+                        $('#games').append(
+                            '<option value="' +
+                                game.id +
+                                '">' +
+                                game.name +
+                                '</option>'
+                        )
+                    })
+                    games = data.games
+                    setGame()
+                })
+            })
+
+            socket.on('status', (data) => {
+                game = $('#games option:selected').val()
+                for (var i = 0; i < games[game].nodes; i++) {
+                    if (games[game].instances[i].id == data.instance) {
+                        $('#plabel' + i).text(
+                            games[game].instances[i].name +
+                                ' (' +
+                                data.state +
+                                ')'
+                        )
+                        $('#progress' + data.instance).html(data.time) //fixme
+                        $('#progress' + data.instance).css(
+                            'width',
+                            (3600 - data.secondsLeft) / 36 + '%'
+                        )
+                    }
                 }
+            })
+
+            $('.action').click(function () {
+                var action = $(this).attr('id')
+                socket.emit('action', {
+                    instance: game, //FIXME - needs to be per-instance, not per game.
+                    action: action,
+                    gm: document.getElementById('user').innerHTML,
+                })
+            })
+
+            $('#shortclues').change(function () {
+                $('#cluebox').val($('#shortclues option:selected').text())
+            })
+
+            $('#cluesubmit').click(function () {
+                socket.emit('clue', {
+                    instance: game,
+                    clue: $('#cluebox').val(),
+                    gm: document.getElementById('user').innerHTML,
+                })
+            })
+
+            $('#clueclear').click(function () {
+                socket.emit('clue', {
+                    instance: game,
+                    clue: '',
+                    gm: document.getElementById('user').innerHTML,
+                })
+            })
+
+            $('#user').click(logout)
+
+            function setGame() {
+                $('#p0').css('display', 'none')
+                $('#p1').css('display', 'none')
+                game = $('#games option:selected').val() || 0
+                for (var i = 0; i < games[game].nodes; i++) {
+                    $('#plabel' + i).text(games[game].instances[i].name)
+                    $('#p' + i).css('display', 'flex')
+                }
+                for (var i = 0; i < games[game].timeline; i++) {
+                    $('#timeline').append(
+                        '<div class="col">' + games[game].timeline[i] + '</div>'
+                    )
+                }
+                $('#shortclues').empty()
+                $('#shortclues').append(
+                    '<option selected disabled>Quick clues</option>'
+                )
             }
-        });
 
-        $(".action").click(function() {
-            var action = $(this).attr('id');
-            socket.emit('action', {
-                instance: game, //FIXME - needs to be per-instance, not per game.
-                action: action,
-                gm: document.getElementById('user').innerHTML
-            });
-        });
-
-        $("#shortclues").change(function() {
-            $("#cluebox").val($("#shortclues option:selected").text());
-        })
-
-        $("#cluesubmit").click(function() {
-            socket.emit('clue', {
-                instance: game,
-                clue: $("#cluebox").val(),
-                gm: document.getElementById('user').innerHTML
-            });
-        });
-
-        $("#clueclear").click(function() {
-            socket.emit('clue', {
-                instance: game,
-                clue: "",
-                gm: document.getElementById('user').innerHTML
-            });
-        });
-
-        function setGame() {
-            $("#p0").css("display", "none");
-            $("#p1").css("display", "none");
-            game = $("#games option:selected").val() || 0;
-            for (var i = 0; i < games[game].nodes; i++) {
-                $("#plabel" + i).text(games[game].instances[i].name);
-                $("#p" + i).css("display", "flex");
-            }
-            for (var i = 0; i < games[game].timeline; i++) {
-                $('#timeline').append('<div class="col">' + games[game].timeline[i] + '</div>')
-            }
-            $("#shortclues").empty();
-            $("#shortclues").append("<option selected disabled>Quick clues</option>");
-        }
-
-        $("#games").change(setGame);
-    </script>
-    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
-    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
-</body>
-
+            $('#games').change(setGame)
+        </script>
+        <script
+            type="module"
+            src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"
+        ></script>
+        <script
+            nomodule
+            src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"
+        ></script>
+    </body>
 </html>
