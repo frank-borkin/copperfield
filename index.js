@@ -33,6 +33,9 @@ winston_transports.push(
                 if (metadata?.clue) {
                     out = out + ' ' + metadata.clue
                 }
+                if (metadata?.time_left) {
+                    out = out + ' ' + metadata.time_left
+                }
                 return out
             })
         ),
@@ -89,7 +92,9 @@ server.listen(port, () => {
 var timers = Array() //of date objects. Per instance
 var state = Array() //The states are intro, reset, running, win and fail. The actions are intro, reset, start, end (lose) and finish (win). Pause/resume were removed. per instance
 var clues = Array() //Current clue or empty string. Per instance
+var log = Array() //Current game log
 var instances = Array()
+var num_clues = Array()
 const games = require('./config/games.json')
 //const sites = require('./config/sites.json');
 
@@ -144,12 +149,26 @@ io.on('connection', (socket) => {
 
     // This is a bit of a FSM
     socket.on('action', (data) => {
+        var timeLeft = instances[data.instance].gameLength //Default
+        if (state[data.instance] == 'running') {
+            var now = new Date()
+            timeLeft = date.subtract(timers[data.instance], now).toSeconds()
+            if (timeLeft <= 0) {
+                timeLeft = 0
+            }
+        }
+        const mins = Math.floor(timeLeft / 60)
+        const seconds = Math.floor(timeLeft - mins * 60)
+
         if (data.action == 'intro') {
             state[data.instance] = 'intro'
             logger.info('Intro started', {
                 gm: data.gm,
                 game: games[data.instance].name,
             })
+            let mins = instances[data.instance].gameLength / 60
+            log[data.instance] = `${mins}:00 ${data.gm} started game.<br>`
+            num_clues[data.instance] = 0
         }
         if (data.action == 'post') {
             state[data.instance] = 'post'
@@ -160,7 +179,7 @@ io.on('connection', (socket) => {
             // We do this _after_ the intro finishes
             timers[data.instance] = date.addSeconds(
                 new Date(),
-                instances[data.instance].gamelength
+                instances[data.instance].gameLength
             )
             logger.info('Game started', {
                 gm: data.gm,
@@ -172,31 +191,54 @@ io.on('connection', (socket) => {
             logger.info('Team Won', {
                 gm: data.gm,
                 game: games[data.instance].name,
+                time_left: `${padStart(mins, 2, '0')}:${padStart(seconds, 2, '0')}`,
+                time_left_secs: timeLeft,
+                clues_used: num_clues[data.instance],
             })
+            log[data.instance] +=
+                `${padStart(mins, 2, '0')}:${padStart(seconds, 2, '0')} ${data.gm} team won.<br>`
         }
         if (data.action == 'reset') {
-            state[data.instance] = 'reset'
-            logger.info('Game reset', {
-                gm: data.gm,
-                game: games[data.instance].name,
-            })
+            if (state[data.instance] != 'running') {
+                state[data.instance] = 'reset'
+                logger.info('Game reset', {
+                    gm: data.gm,
+                    game: games[data.instance].name,
+                })
+            }
         }
     })
 
     // Am empty string clears the screen, anything else is a clue
     socket.on('clue', (data) => {
         clues[data.instance] = data.clue
+        var timeLeft = instances[data.instance].gameLength //Default
+        if (state[data.instance] == 'running') {
+            var now = new Date()
+            timeLeft = date.subtract(timers[data.instance], now).toSeconds()
+            if (timeLeft <= 0) {
+                timeLeft = 0
+            }
+        }
+        const mins = Math.floor(timeLeft / 60)
+        const seconds = Math.floor(timeLeft - mins * 60)
+
         if (data.clue == '') {
             logger.info('Clue cleared', {
                 gm: data.gm,
                 game: games[data.instance].name,
             })
+            log[data.instance] +=
+                `${padStart(mins, 2, '0')}:${padStart(seconds, 2, '0')} ${data.gm} cleared clue<br>`
         } else {
             logger.info('Clue sent', {
                 gm: data.gm,
                 game: games[data.instance].name,
                 clue: data.clue,
             })
+            log[data.instance] +=
+                `${padStart(mins, 2, '0')}:${padStart(seconds, 2, '0')} ${data.gm} sent clue: ${data.clue}<br>`
+            num_clues[data.instance]++
         }
         setTimeout(() => {
             clues[data.instance] = ''
@@ -229,6 +271,7 @@ io.on('connection', (socket) => {
             secondsLeft: timeLeft,
             clue: clues[instance],
             state: state[instance],
+            log: log[instance],
         })
     }
 

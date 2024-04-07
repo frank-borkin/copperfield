@@ -43,11 +43,7 @@
                             '/gm.html'
                         )
                         const user = await auth0Client.getUser()
-                        document.getElementById('user').innerHTML =
-                            user.name +
-                            ' <img src="' +
-                            user.picture +
-                            '" height="22">'
+                        document.getElementById('user').innerHTML = user.name
                     } else {
                         await auth0Client.loginWithRedirect({
                             authorizationParams: {
@@ -58,11 +54,7 @@
                     }
                 } else {
                     const user = await auth0Client.getUser()
-                    document.getElementById('user').innerHTML =
-                        user.name +
-                        ' <img src="' +
-                        user.picture +
-                        '" height="22">'
+                    document.getElementById('user').innerHTML = user.name
                 }
             }
         </script>
@@ -201,6 +193,7 @@
                     </button>
                 </div>
             </div>
+            <div class="row" id="log"></div>
         </main>
 
         <script src="jquery-3.6.0.slim.min.js"></script>
@@ -255,6 +248,7 @@
                             'width',
                             (3600 - data.secondsLeft) / 36 + '%'
                         )
+                        $('#log').html(data.log)
                     }
                 }
             })
