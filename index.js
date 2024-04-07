@@ -166,8 +166,8 @@ io.on('connection', (socket) => {
                 gm: data.gm,
                 game: games[data.instance].name,
             })
-            let mins = instances[data.instance].gameLength / 60
-            log[data.instance] = `${mins}:00 ${data.gm} started game.<br>`
+            let gl_mins = instances[data.instance].gameLength / 60
+            log[data.instance] = `${gl_mins}:00 ${data.gm} started game.<br>`
             num_clues[data.instance] = 0
         }
         if (data.action == 'post') {
@@ -206,6 +206,26 @@ io.on('connection', (socket) => {
                     game: games[data.instance].name,
                 })
             }
+        }
+        if (data.action == 'addtime') {
+            console.log(timers[data.instance])
+            timers[data.instance] = date.addSeconds(timers[data.instance], 60)
+            logger.info('Added time', {
+                gm: data.gm,
+                game: games[data.instance].name,
+            })
+            log[data.instance] +=
+                `${padStart(mins, 2, '0')}:${padStart(seconds, 2, '0')} ${data.gm} added 60 seconds.<br>`
+        }
+        if (data.action == 'removetime') {
+            console.log(timers[data.instance])
+            timers[data.instance] = date.addSeconds(timers[data.instance], -60)
+            logger.info('Removed time', {
+                gm: data.gm,
+                game: games[data.instance].name,
+            })
+            log[data.instance] +=
+                `${padStart(mins, 2, '0')}:${padStart(seconds, 2, '0')} ${data.gm} removed 60 seconds.<br>`
         }
     })
 
@@ -277,9 +297,13 @@ io.on('connection', (socket) => {
 
     for (var j = 0; j < instances.length; j++) {
         // Send updates every second. Ensure we're only doing it once per instance.
+        // Set things to some sane starting position.
         if (instances[j].timerStarted == false) {
             instances[j].timerStarted = true
             state[j] = 'reset'
+            timers[j] = new Date()
+            log[j] = ''
+            num_clues[j] = 0
             setInterval(sendStatus, 1000, instances[j].id)
         }
     }
