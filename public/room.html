@@ -1,156 +1,168 @@
 <!doctype html>
 <html lang="en">
-
-<head>
-    <title>Game Screen: Press F11 for Full Screen</title>
-    <meta charset=UTF-8>
-    <style>
-        body {
-            background-size: cover;
-        }
-        
-        #bgVideo {
-            position: fixed;
-            right: 0;
-            bottom: 0;
-            min-width: 100%;
-            min-height: 100%;
-        }
-        
-        #clock {
-            color: white;
-            font-size: 128px;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            margin: 0 auto;
-        }
-    </style>
-</head>
-
-<body>
-    <video autoplay muted loop id="bgVideo"></video>
-    <video id="introVideo"></video>
-    <div id="clock"></div>
-    <div id="clue"></div>
-
-    <script src="jquery-3.6.0.slim.min.js"></script>
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io({
-            transports: ["websocket"]
-        });
-
-        var clueSound;
-        var introVideo;
-        var winVideo;
-        var loseVideo;
-        var soundPlaying = false;
-        var vidPlaying = false;
-        var lastClue = "";
-        var winTime;
-
-        function playSound(url) {
-            if (soundPlaying == false) { //By default, the sound will play over and over for each status msg
-                soundPlaying = true;
-                var audio = new Audio(url);
-                audio.addEventListener("canplaythrough", (event) => {
-                    audio.play();
-                });
+    <head>
+        <title>Game Screen: Press F11 for Full Screen</title>
+        <meta charset="UTF-8" />
+        <style>
+            body {
+                background-size: cover;
             }
-        }
 
-        // Extract ?instance=4. This should match games.json
-        const urlParams = new URLSearchParams(window.location.search);
-        const instance = urlParams.get('instance');
+            #bgVideo {
+                position: fixed;
+                right: 0;
+                bottom: 0;
+                min-width: 100%;
+                min-height: 100%;
+            }
 
-        // Parse status messages:
-        // time (string of time left, could be empty string to hide the clock)
-        // status (game running, paused, etc)
-        // clue (HTML to display instead of clock)
-        socket.on('status', (data) => {
-            console.log(data.status);
-            $("#clock").html(data.time);
-            if (data.clue && data.clue.length > 0) {
-                $("#clock").html(data.clue);
-                $("#clock").css("font-size", "36px");
-                if (data.clue != lastClue) {
-                    console.log(lastClue);
-                    playSound(clueSound)
-                    lastClue = data.clue;
-                    soundPlaying = false;
-                }
-            } else {
-                $("#clock").css("font-size", "128px");
-                soundPlaying = false;
+            #clock {
+                color: white;
+                font-size: 128px;
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                margin: 0 auto;
             }
-            if (data.state == 'intro' || data.state == 'reset' || data.state == 'win' || data.state == 'fail') {
-                $("#clock").html("");
-            }
-            if (data.state == 'post') {
-                $("#clock").html(winTime);
-            }
-            if (data.state == 'intro') {
-                if (vidPlaying == false) {
-                    vidPlaying = true;
-                    v = document.getElementById('introVideo');
-                    v.width = $(window).width();
-                    v.height = $(window).height();
-                    v.src = introVideo;
-                    $("#introVideo").show();
-                    v.play();
+        </style>
+    </head>
 
-                    v.addEventListener("ended", (event) => {
-                        socket.emit('action', {
-                            instance: instance,
-                            action: 'start'
-                        });
-                        $("#introVideo").hide();
-                        vidPlaying = false;
-                    });
+    <body>
+        <video autoplay muted loop id="bgVideo"></video>
+        <video id="introVideo"></video>
+        <div id="clock"></div>
+        <div id="clue"></div>
+
+        <script src="jquery-3.6.0.slim.min.js"></script>
+        <script src="/socket.io/socket.io.js"></script>
+        <script>
+            const socket = io({
+                transports: ['websocket'],
+            })
+
+            var clueSound
+            var introVideo
+            var winVideo
+            var loseVideo
+            var soundPlaying = false
+            var vidPlaying = false
+            var lastClue = ''
+            var winTime
+
+            function playSound(url) {
+                if (soundPlaying == false) {
+                    //By default, the sound will play over and over for each status msg
+                    soundPlaying = true
+                    var audio = new Audio(url)
+                    audio.addEventListener('canplaythrough', (event) => {
+                        audio.play()
+                    })
                 }
             }
-            if (data.state == 'win') {
-                if (vidPlaying == false) {
-                    winTime = data.time;
-                    vidPlaying = true;
-                    v = document.getElementById('introVideo');
-                    v.width = $(window).width();
-                    v.height = $(window).height();
-                    v.src = winVideo;
-                    $("#introVideo").show();
-                    v.play();
 
-                    v.addEventListener("ended", (event) => {
-                        socket.emit('action', {
-                            instance: instance,
-                            action: 'post'
-                        });
-                        $("#introVideo").hide();
-                        vidPlaying = false;
-                    });
-                }
-            }
-        });
+            // Extract ?instance=4. This should match games.json
+            const urlParams = new URLSearchParams(window.location.search)
+            const instance = urlParams.get('instance')
 
-        // Once the ws connection is there, send a "register" event and get the game data:
-        // background image/video (type & url)
-        socket.on("connect", function() {
-            socket.emit('register', instance, (data) => {
-                console.log(data.status);
-                if (data.bgType == "video") {
-                    $("#bgVideo").append("<source src='" + data.bgPath + "' type='video/mp4'>");
+            // Parse status messages:
+            // time (string of time left, could be empty string to hide the clock)
+            // status (game running, paused, etc)
+            // clue (HTML to display instead of clock)
+            socket.on('status', (data) => {
+                console.log(data.status)
+                $('#clock').html(data.time)
+                if (data.clue && data.clue.length > 0) {
+                    $('#clock').html(data.clue)
+                    $('#clock').css('font-size', '36px')
+                    if (data.clue != lastClue) {
+                        console.log(lastClue)
+                        playSound(clueSound)
+                        lastClue = data.clue
+                        soundPlaying = false
+                    }
                 } else {
-                    $("body").css("background-image", "url('" + data.bgPath + "')");
+                    $('#clock').css('font-size', '128px')
+                    soundPlaying = false
                 }
-                clueSound = data.clueSound;
-                introVideo = data.introVideo;
-                winVideo = data.winVideo;
-                loseVideo = data.loseVideo;
-            });
-        });
-    </script>
-</body>
+                if (
+                    data.state == 'intro' ||
+                    data.state == 'reset' ||
+                    data.state == 'win' ||
+                    data.state == 'fail' ||
+                    data.state == 'ended'
+                ) {
+                    $('#clock').html('')
+                }
+                if (data.state == 'post') {
+                    $('#clock').html(winTime)
+                }
+                if (data.state == 'intro') {
+                    if (vidPlaying == false) {
+                        vidPlaying = true
+                        v = document.getElementById('introVideo')
+                        v.width = $(window).width()
+                        v.height = $(window).height()
+                        v.src = introVideo
+                        $('#introVideo').show()
+                        v.play()
 
+                        v.addEventListener('ended', (event) => {
+                            socket.emit('action', {
+                                instance: instance,
+                                action: 'start',
+                            })
+                            $('#introVideo').hide()
+                            vidPlaying = false
+                        })
+                    }
+                }
+                if (data.state == 'win') {
+                    if (vidPlaying == false) {
+                        winTime = data.time
+                        vidPlaying = true
+                        v = document.getElementById('introVideo')
+                        v.width = $(window).width()
+                        v.height = $(window).height()
+                        v.src = winVideo
+                        $('#introVideo').show()
+                        v.play()
+
+                        v.addEventListener('ended', (event) => {
+                            socket.emit('action', {
+                                instance: instance,
+                                action: 'post',
+                            })
+                            $('#introVideo').hide()
+                            vidPlaying = false
+                        })
+                    }
+                }
+            })
+
+            // Once the ws connection is there, send a "register" event and get the game data:
+            // background image/video (type & url)
+            socket.on('connect', function () {
+                socket.emit('register', instance, (data) => {
+                    console.log(data.status)
+                    if (data.bgType == 'video') {
+                        $('#bgVideo').append(
+                            "<source src='" +
+                                data.bgPath +
+                                "' type='video/mp4'>"
+                        )
+                    } else {
+                        $('body').css(
+                            'background-image',
+                            "url('" + data.bgPath + "')"
+                        )
+                    }
+                    clueSound = data.clueSound
+                    introVideo = data.introVideo
+                    winVideo = data.winVideo
+                    loseVideo = data.loseVideo
+                })
+            })
+        </script>
+    </body>
 </html>

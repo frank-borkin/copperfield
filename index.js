@@ -95,6 +95,7 @@ var clues = Array() //Current clue or empty string. Per instance
 var log = Array() //Current game log
 var instances = Array()
 var num_clues = Array()
+var win_time = Array()
 const games = require('./config/games.json')
 //const sites = require('./config/sites.json');
 
@@ -172,6 +173,7 @@ io.on('connection', (socket) => {
         }
         if (data.action == 'post') {
             state[data.instance] = 'post'
+            win_time[data.instance] = timers[data.instance]
         }
         if (data.action == 'start') {
             state[data.instance] = 'running'
@@ -277,6 +279,10 @@ io.on('connection', (socket) => {
             if (timeLeft <= 0) {
                 state[instance] = 'fail'
             }
+        } else if (state[instance] == 'finish' || state[instance] == 'post') {
+            timeLeft = win_time[instance]
+        } else {
+            timeLeft = 0
         }
         // Socket name is instance0, instance1, etc
         socket.to('instance' + instance).emit('status', {
