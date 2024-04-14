@@ -297,6 +297,7 @@
             })
 
             $('#clueclear').click(function () {
+                $('#cluebox').val('')
                 socket.emit('clue', {
                     instance: game,
                     clue: '',
