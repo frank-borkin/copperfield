@@ -1,6 +1,6 @@
 {
     "name": "copperfield",
-    "version": "0.0.10",
+    "version": "0.0.11",
     "description": "An Escape Room Management System",
     "main": "index.js",
     "author": "Frank Borkin",
