@@ -90,7 +90,7 @@ server.listen(port, () => {
 
 // State management.
 var timers = Array() //of date objects. Per instance
-var state = Array() //The states are intro, reset, running, win and fail. The actions are intro, reset, start, end (lose) and finish (win). Pause/resume were removed. per instance
+var state = Array() //The states are intro, reset, running, win, fail and post. The actions are intro, reset, start, end (lose), finish (win) and post (end vid completed). Pause/resume were removed. per instance
 var clues = Array() //Current clue or empty string. Per instance
 var log = Array() //Current game log
 var instances = Array()
@@ -161,7 +161,10 @@ io.on('connection', (socket) => {
         const mins = Math.floor(timeLeft / 60)
         const seconds = Math.floor(timeLeft - mins * 60)
 
-        if (data.action == 'intro') {
+        if (
+            data.action == 'intro' &&
+            (state[data.instance] == 'reset' || state[data.instance] == 'post')
+        ) {
             state[data.instance] = 'intro'
             logger.info('Intro started', {
                 gm: data.gm,
@@ -173,7 +176,6 @@ io.on('connection', (socket) => {
         }
         if (data.action == 'post') {
             state[data.instance] = 'post'
-            win_time[data.instance] = timers[data.instance]
         }
         if (data.action == 'start') {
             state[data.instance] = 'running'
@@ -190,6 +192,7 @@ io.on('connection', (socket) => {
         }
         if (data.action == 'finish') {
             state[data.instance] = 'win'
+            win_time[data.instance] = timers[data.instance]
             logger.info('Team Won', {
                 gm: data.gm,
                 game: games[data.instance].name,
