@@ -19,7 +19,7 @@
         "winston": "^3.13.0"
     },
     "scripts": {
-        "release": "git commit -m '$COMMIT_MSG' -a && npm version patch && git push --follow-tags",
+        "release": "git commit -m \"$COMMIT_MSG\" -a && npm version patch && git push --follow-tags",
         "start": "node index.js",
         "test": "eslint"
     },
