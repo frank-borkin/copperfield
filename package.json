@@ -1,11 +1,12 @@
 {
-    "name": "copperfield",
-    "version": "0.0.12",
-    "description": "An Escape Room Management System",
-    "main": "index.js",
     "author": "Frank Borkin",
-    "private": true,
+    "description": "An Escape Room Management System",
     "license": "GPL-3.0-or-later",
+    "main": "index.js",
+    "name": "copperfield",
+    "private": true,
+    "type": "module",
+    "version": "0.0.12",
     "dependencies": {
         "@logtail/node": "^0.4.21",
         "@logtail/winston": "^0.4.21",

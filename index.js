@@ -1,17 +1,22 @@
+import { createRequire } from 'module'
+import { fileURLToPath } from 'url'
+import { init, Integrations, Handlers } from '@sentry/node'
+import { join } from 'path'
 import { Logtail } from '@logtail/node'
 import { LogtailTransport } from '@logtail/winston'
-import { init, Integrations, Handlers } from '@sentry/node'
 import { nodeProfilingIntegration } from '@sentry/profiling-node'
-import { subtract, addSeconds } from 'date-and-time'
-import express from 'express'
-import padStart from 'string.prototype.padstart'
-import { join } from 'path'
 import {
     format as _format,
     transports as _transports,
     createLogger,
 } from 'winston'
-
+import date from 'date-and-time'
+import express from 'express'
+import padStart from 'string.prototype.padstart'
+import path from 'path'
+const require = createRequire(import.meta.url)
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 const { combine, timestamp, printf, colorize, align, json, errors } = _format
 
 // Gives us something like [2024-04-01 04:15:34.906] MyGame SomeGM Clue sent Try the key in another lock.
@@ -99,11 +104,10 @@ var log = Array() //Current game log
 var instances = Array()
 var num_clues = Array()
 var win_time = Array()
-import games, { forEach } from './config/games.json'
-//const sites = require('./config/sites.json');
+const games = require('./config/games.json')
 
 // Populate the instances array with the game instances we have on this site. The ID's may not be sequential.
-forEach(function (g) {
+games.forEach(function (g) {
     g.instances.forEach(function (i) {
         instances.push(i)
     })
@@ -156,7 +160,7 @@ io.on('connection', (socket) => {
         var timeLeft = instances[data.instance].gameLength //Default
         if (state[data.instance] == 'running') {
             var now = new Date()
-            timeLeft = subtract(timers[data.instance], now).toSeconds()
+            timeLeft = date.subtract(timers[data.instance], now).toSeconds()
             if (timeLeft <= 0) {
                 timeLeft = 0
             }
@@ -184,7 +188,7 @@ io.on('connection', (socket) => {
             state[data.instance] = 'running'
             // Set the end time of the game to gamelength seconds from now.
             // We do this _after_ the intro finishes
-            timers[data.instance] = addSeconds(
+            timers[data.instance] = date.addSeconds(
                 new Date(),
                 instances[data.instance].gameLength
             )
@@ -217,7 +221,7 @@ io.on('connection', (socket) => {
         }
         if (data.action == 'addtime') {
             console.log(timers[data.instance])
-            timers[data.instance] = addSeconds(timers[data.instance], 60)
+            timers[data.instance] = date.addSeconds(timers[data.instance], 60)
             logger.info('Added time', {
                 gm: data.gm,
                 game: games[data.instance].name,
@@ -227,7 +231,7 @@ io.on('connection', (socket) => {
         }
         if (data.action == 'removetime') {
             console.log(timers[data.instance])
-            timers[data.instance] = addSeconds(timers[data.instance], -60)
+            timers[data.instance] = date.addSeconds(timers[data.instance], -60)
             logger.info('Removed time', {
                 gm: data.gm,
                 game: games[data.instance].name,
@@ -243,7 +247,7 @@ io.on('connection', (socket) => {
         var timeLeft = instances[data.instance].gameLength //Default
         if (state[data.instance] == 'running') {
             var now = new Date()
-            timeLeft = subtract(timers[data.instance], now).toSeconds()
+            timeLeft = date.subtract(timers[data.instance], now).toSeconds()
             if (timeLeft <= 0) {
                 timeLeft = 0
             }
@@ -281,7 +285,7 @@ io.on('connection', (socket) => {
         var timeLeft = instances[instance].gamelength //Default
         if (state[instance] == 'running') {
             var now = new Date()
-            timeLeft = subtract(timers[instance], now).toSeconds()
+            timeLeft = date.subtract(timers[instance], now).toSeconds()
             if (timeLeft <= 0) {
                 state[instance] = 'fail'
             }
