@@ -268,7 +268,7 @@ io.on('connection', (socket) => {
                 gm: data.gm,
                 game: games[data.instance].name,
             })
-        }, 30000) //30s
+        }, 60000) //60s
     })
 
     function sendStatus(instance) {
