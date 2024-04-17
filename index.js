@@ -1,20 +1,23 @@
-const { Logtail } = require('@logtail/node')
-const { LogtailTransport } = require('@logtail/winston')
-const Sentry = require('@sentry/node')
-const { nodeProfilingIntegration } = require('@sentry/profiling-node')
-const date = require('date-and-time')
-const express = require('express')
-const padStart = require('string.prototype.padstart')
-const path = require('path')
-const winston = require('winston')
+import { Logtail } from '@logtail/node'
+import { LogtailTransport } from '@logtail/winston'
+import { init, Integrations, Handlers } from '@sentry/node'
+import { nodeProfilingIntegration } from '@sentry/profiling-node'
+import { subtract, addSeconds } from 'date-and-time'
+import express from 'express'
+import padStart from 'string.prototype.padstart'
+import { join } from 'path'
+import {
+    format as _format,
+    transports as _transports,
+    createLogger,
+} from 'winston'
 
-const { combine, timestamp, printf, colorize, align, json, errors } =
-    winston.format
+const { combine, timestamp, printf, colorize, align, json, errors } = _format
 
 // Gives us something like [2024-04-01 04:15:34.906] MyGame SomeGM Clue sent Try the key in another lock.
 var winston_transports = []
 winston_transports.push(
-    new winston.transports.Console({
+    new _transports.Console({
         format: combine(
             colorize({ all: true }),
             timestamp({
@@ -49,7 +52,7 @@ if (process.env.LOGTAIL_TOKEN) {
     )
 }
 
-const logger = winston.createLogger({
+const logger = createLogger({
     level: process.env.LOG_LEVEL || 'info',
     format: combine(errors({ stack: true }), timestamp(), json()),
     transports: winston_transports,
@@ -61,13 +64,13 @@ const app = express()
 
 //Setup Sentry
 if (process.env.SENTRY_TOKEN) {
-    Sentry.init({
+    init({
         dsn: process.env.SENTRY_TOKEN,
         integrations: [
             // enable HTTP calls tracing
-            new Sentry.Integrations.Http({ tracing: true }),
+            new Integrations.Http({ tracing: true }),
             // enable Express.js middleware tracing
-            new Sentry.Integrations.Express({ app }),
+            new Integrations.Express({ app }),
             nodeProfilingIntegration(),
         ],
         // Performance Monitoring
@@ -76,12 +79,12 @@ if (process.env.SENTRY_TOKEN) {
         profilesSampleRate: 1.0,
     })
 
-    app.use(Sentry.Handlers.requestHandler())
-    app.use(Sentry.Handlers.tracingHandler())
-    app.use(Sentry.Handlers.errorHandler())
+    app.use(Handlers.requestHandler())
+    app.use(Handlers.tracingHandler())
+    app.use(Handlers.errorHandler())
 }
 
-app.use(express.static(path.join(__dirname, 'public')))
+app.use(express.static(join(__dirname, 'public')))
 const server = require('http').createServer(app)
 const io = require('socket.io')(server)
 server.listen(port, () => {
@@ -96,11 +99,11 @@ var log = Array() //Current game log
 var instances = Array()
 var num_clues = Array()
 var win_time = Array()
-const games = require('./config/games.json')
+import games, { forEach } from './config/games.json'
 //const sites = require('./config/sites.json');
 
 // Populate the instances array with the game instances we have on this site. The ID's may not be sequential.
-games.forEach(function (g) {
+forEach(function (g) {
     g.instances.forEach(function (i) {
         instances.push(i)
     })
@@ -153,7 +156,7 @@ io.on('connection', (socket) => {
         var timeLeft = instances[data.instance].gameLength //Default
         if (state[data.instance] == 'running') {
             var now = new Date()
-            timeLeft = date.subtract(timers[data.instance], now).toSeconds()
+            timeLeft = subtract(timers[data.instance], now).toSeconds()
             if (timeLeft <= 0) {
                 timeLeft = 0
             }
@@ -181,7 +184,7 @@ io.on('connection', (socket) => {
             state[data.instance] = 'running'
             // Set the end time of the game to gamelength seconds from now.
             // We do this _after_ the intro finishes
-            timers[data.instance] = date.addSeconds(
+            timers[data.instance] = addSeconds(
                 new Date(),
                 instances[data.instance].gameLength
             )
@@ -214,7 +217,7 @@ io.on('connection', (socket) => {
         }
         if (data.action == 'addtime') {
             console.log(timers[data.instance])
-            timers[data.instance] = date.addSeconds(timers[data.instance], 60)
+            timers[data.instance] = addSeconds(timers[data.instance], 60)
             logger.info('Added time', {
                 gm: data.gm,
                 game: games[data.instance].name,
@@ -224,7 +227,7 @@ io.on('connection', (socket) => {
         }
         if (data.action == 'removetime') {
             console.log(timers[data.instance])
-            timers[data.instance] = date.addSeconds(timers[data.instance], -60)
+            timers[data.instance] = addSeconds(timers[data.instance], -60)
             logger.info('Removed time', {
                 gm: data.gm,
                 game: games[data.instance].name,
@@ -240,7 +243,7 @@ io.on('connection', (socket) => {
         var timeLeft = instances[data.instance].gameLength //Default
         if (state[data.instance] == 'running') {
             var now = new Date()
-            timeLeft = date.subtract(timers[data.instance], now).toSeconds()
+            timeLeft = subtract(timers[data.instance], now).toSeconds()
             if (timeLeft <= 0) {
                 timeLeft = 0
             }
@@ -278,7 +281,7 @@ io.on('connection', (socket) => {
         var timeLeft = instances[instance].gamelength //Default
         if (state[instance] == 'running') {
             var now = new Date()
-            timeLeft = date.subtract(timers[instance], now).toSeconds()
+            timeLeft = subtract(timers[instance], now).toSeconds()
             if (timeLeft <= 0) {
                 state[instance] = 'fail'
             }
