@@ -14,6 +14,7 @@ import date from 'date-and-time'
 import express from 'express'
 import padStart from 'string.prototype.padstart'
 import path from 'path'
+
 const require = createRequire(import.meta.url)
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -103,7 +104,7 @@ var clues = Array() //Current clue or empty string. Per instance
 var log = Array() //Current game log
 var instances = Array()
 var num_clues = Array()
-var win_time = Array()
+var win_time = Array() //Seconds
 const games = require('./config/games.json')
 
 // Populate the instances array with the game instances we have on this site. The ID's may not be sequential.
@@ -112,6 +113,24 @@ games.forEach(function (g) {
         instances.push(i)
     })
 })
+
+instances.forEach((i) => (i.timerStarted = false))
+
+function getTimeLeft(instance) {
+    var timeLeft = instances[instance].gameLength //Default
+    if (state[instance] == 'running') {
+        var now = new Date()
+        timeLeft = date.subtract(timers[instance], now).toSeconds()
+        if (timeLeft <= 0) {
+            state[instance] = 'fail'
+        }
+    } else if (state[instance] == 'win' || state[instance] == 'post') {
+        timeLeft = win_time[instance]
+    } else if (state[instance] == 'fail') {
+        timeLeft = 0
+    }
+    return timeLeft //In seconds
+}
 
 io.on('connection', (socket) => {
     // When a room client connects
@@ -157,14 +176,7 @@ io.on('connection', (socket) => {
 
     // This is a bit of a FSM
     socket.on('action', (data) => {
-        var timeLeft = instances[data.instance].gameLength //Default
-        if (state[data.instance] == 'running') {
-            var now = new Date()
-            timeLeft = date.subtract(timers[data.instance], now).toSeconds()
-            if (timeLeft <= 0) {
-                timeLeft = 0
-            }
-        }
+        var timeLeft = getTimeLeft(data.instance)
         const mins = Math.floor(timeLeft / 60)
         const seconds = Math.floor(timeLeft - mins * 60)
 
@@ -186,7 +198,7 @@ io.on('connection', (socket) => {
         }
         if (data.action == 'start') {
             state[data.instance] = 'running'
-            // Set the end time of the game to gamelength seconds from now.
+            // Set the end time of the game to gameLength seconds from now.
             // We do this _after_ the intro finishes
             timers[data.instance] = date.addSeconds(
                 new Date(),
@@ -199,7 +211,10 @@ io.on('connection', (socket) => {
         }
         if (data.action == 'finish') {
             state[data.instance] = 'win'
-            win_time[data.instance] = timers[data.instance]
+            var now = new Date()
+            win_time[data.instance] = date
+                .subtract(timers[data.instance], now)
+                .toSeconds()
             logger.info('Team Won', {
                 gm: data.gm,
                 game: games[data.instance].name,
@@ -244,14 +259,7 @@ io.on('connection', (socket) => {
     // Am empty string clears the screen, anything else is a clue
     socket.on('clue', (data) => {
         clues[data.instance] = data.clue
-        var timeLeft = instances[data.instance].gameLength //Default
-        if (state[data.instance] == 'running') {
-            var now = new Date()
-            timeLeft = date.subtract(timers[data.instance], now).toSeconds()
-            if (timeLeft <= 0) {
-                timeLeft = 0
-            }
-        }
+        var timeLeft = getTimeLeft(data.instance)
         const mins = Math.floor(timeLeft / 60)
         const seconds = Math.floor(timeLeft - mins * 60)
 
@@ -282,18 +290,7 @@ io.on('connection', (socket) => {
     })
 
     function sendStatus(instance) {
-        var timeLeft = instances[instance].gamelength //Default
-        if (state[instance] == 'running') {
-            var now = new Date()
-            timeLeft = date.subtract(timers[instance], now).toSeconds()
-            if (timeLeft <= 0) {
-                state[instance] = 'fail'
-            }
-        } else if (state[instance] == 'finish' || state[instance] == 'post') {
-            timeLeft = win_time[instance]
-        } else {
-            timeLeft = 0
-        }
+        var timeLeft = getTimeLeft(instance)
         // Socket name is instance0, instance1, etc
         socket.to('instance' + instance).emit('status', {
             instance: instance,
@@ -319,7 +316,9 @@ io.on('connection', (socket) => {
             state[j] = 'reset'
             timers[j] = new Date()
             log[j] = ''
+            clues[j] = ''
             num_clues[j] = 0
+            win_time[j] = 0
             setInterval(sendStatus, 1000, instances[j].id)
         }
     }
