@@ -60,7 +60,8 @@
         </script>
         <style>
             .progress {
-                height: 24px;
+                height: 45px;
+                font-size: 36px;
             }
 
             .row > * {
@@ -92,7 +93,7 @@
                 <div class="col" id="plabel0"></div>
                 <div class="progress col-10">
                     <div
-                        id="progress0"
+                        id="progress"
                         class="progress-bar progress-bar-striped progress-bar-animated"
                         role="progressbar"
                         style="width: 0%"
@@ -121,8 +122,8 @@
                             name="refresh-outline"
                             aria-label="Reset Game"
                             style="color: blue; font-weight: bold"
-                        ></ion-icon>
-                    </span>
+                        ></ion-icon> </span
+                    ><br />
                     <span class="action" id="addtime">
                         <ion-icon
                             name="add-outline"
@@ -137,43 +138,6 @@
                             style="color: orange; font-weight: bold"
                         ></ion-icon>
                     </span>
-                </div>
-            </div>
-
-            <div class="row" id="p1" style="display: none">
-                <div class="col" id="plabel1"></div>
-                <div class="progress col-10">
-                    <div
-                        id="progress1"
-                        class="progress-bar progress-bar-striped progress-bar-animated"
-                        role="progressbar"
-                        style="width: 0%"
-                        aria-valuenow="0"
-                        aria-valuemin="0"
-                        aria-valuemax="3600"
-                    ></div>
-                </div>
-                <div class="col">
-                    <ion-icon
-                        name="play-outline"
-                        aria-label="Start Game"
-                    ></ion-icon>
-                    <ion-icon
-                        name="stop-outline"
-                        aria-label="Stop Game"
-                    ></ion-icon>
-                    <ion-icon
-                        name="refresh-outline"
-                        aria-label="Reset Game"
-                    ></ion-icon>
-                    <ion-icon
-                        name="add-outline"
-                        aria-label="Add Time"
-                    ></ion-icon>
-                    <ion-icon
-                        name="remove-outline"
-                        aria-label="Remove Time"
-                    ></ion-icon>
                 </div>
             </div>
             <div class="row">
@@ -265,11 +229,16 @@
                                 data.state +
                                 ')'
                         )
-                        $('#progress' + data.instance).html(data.time) //fixme
-                        $('#progress' + data.instance).css(
-                            'width',
-                            (3600 - data.secondsLeft) / 36 + '%'
-                        )
+                        $('#progress').html(data.time)
+                        var pc = (3600 - data.secondsLeft) / 36
+                        $('#progress').css('width', pc + '%')
+                        if (data.secondsLeft < 120) {
+                            $('#progress').css('background-color', 'red')
+                        } else if (data.secondsLeft < 300) {
+                            $('#progress').css('background-color', 'orange')
+                        } else {
+                            $('#progress').css('background-color', 'green')
+                        }
                         $('#log').html(data.log)
                     }
                 }
@@ -309,7 +278,7 @@
 
             function setGame() {
                 $('#p0').css('display', 'none')
-                $('#p1').css('display', 'none')
+                //$('#p1').css('display', 'none')
                 game = $('#games option:selected').val() || 0
                 for (var i = 0; i < games[game].nodes; i++) {
                     $('#plabel' + i).text(games[game].instances[i].name)
