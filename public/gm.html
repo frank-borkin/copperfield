@@ -260,7 +260,7 @@
             $('#cluesubmit').click(function () {
                 socket.emit('clue', {
                     instance: game,
-                    clue: $('#cluebox').val(),
+                    clue: $('#cluebox').val().replaceAll('\n', '<br>'),
                     gm: document.getElementById('user').innerHTML,
                 })
             })

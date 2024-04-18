@@ -33,6 +33,7 @@
                 left: 50%;
                 transform: translate(-50%, -50%);
                 margin: 0 auto;
+                width: 1200px;
             }
         </style>
     </head>
@@ -83,7 +84,8 @@
                 $('#clock').html(data.time)
                 if (data.clue && data.clue.length > 0) {
                     $('#clock').html(data.clue)
-                    $('#clock').css('font-size', '36px')
+                    $('#clock').css('font-size', '72px')
+                    $('#clock').css('text-align', 'left')
                     if (data.clue != lastClue) {
                         console.log(lastClue)
                         playSound(clueSound)
@@ -92,6 +94,7 @@
                     }
                 } else {
                     $('#clock').css('font-size', '128px')
+                    $('#clock').css('text-align', 'center')
                     soundPlaying = false
                 }
                 if (
