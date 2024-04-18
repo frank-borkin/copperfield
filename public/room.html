@@ -6,9 +6,18 @@
         <style>
             body {
                 background-size: cover;
+                background-color: black;
             }
 
             #bgVideo {
+                position: fixed;
+                right: 0;
+                bottom: 0;
+                min-width: 100%;
+                min-height: 100%;
+            }
+
+            #introVideo {
                 position: fixed;
                 right: 0;
                 bottom: 0;
@@ -29,7 +38,7 @@
     </head>
 
     <body>
-        <video autoplay muted loop id="bgVideo"></video>
+        <video autoplay loop id="bgVideo" style="z-index: -5"></video>
         <video id="introVideo"></video>
         <div id="clock"></div>
         <div id="clue"></div>
@@ -104,6 +113,7 @@
                         v.width = $(window).width()
                         v.height = $(window).height()
                         v.src = introVideo
+                        $('#bgVideo').hide()
                         $('#introVideo').show()
                         v.play()
 
@@ -113,6 +123,7 @@
                                 action: 'start',
                             })
                             $('#introVideo').hide()
+                            $('#bgVideo').show()
                             vidPlaying = false
                         })
                     }
@@ -125,6 +136,7 @@
                         v.width = $(window).width()
                         v.height = $(window).height()
                         v.src = winVideo
+                        $('#bgVideo').hide()
                         $('#introVideo').show()
                         v.play()
 
@@ -134,6 +146,7 @@
                                 action: 'post',
                             })
                             $('#introVideo').hide()
+                            $('#bgVideo').show()
                             vidPlaying = false
                         })
                     }
