@@ -194,7 +194,13 @@ io.on('connection', (socket) => {
             num_clues[data.instance] = 0
         }
         if (data.action == 'post') {
-            state[data.instance] = 'post'
+            if (
+                // Stops the vid from messing with the state if the GM already reset the game
+                state[data.instance] == 'win' ||
+                state[data.instance] == 'fail'
+            ) {
+                state[data.instance] = 'post'
+            }
         }
         if (data.action == 'start') {
             state[data.instance] = 'running'
