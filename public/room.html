@@ -131,14 +131,14 @@
                         })
                     }
                 }
-                if (data.state == 'win') {
+                if (data.state == 'win' || data.state == 'fail') {
                     if (vidPlaying == false) {
                         winTime = data.time
                         vidPlaying = true
                         v = document.getElementById('introVideo')
                         v.width = $(window).width()
                         v.height = $(window).height()
-                        v.src = winVideo
+                        v.src = data.state == 'win' ? winVideo : loseVideo
                         $('#bgVideo').hide()
                         $('#introVideo').show()
                         v.play()
