@@ -133,7 +133,7 @@
                 }
                 if (data.state == 'win' || data.state == 'fail') {
                     if (vidPlaying == false) {
-                        winTime = data.time
+                        winTime = data.state == 'win' ? data.time : '-'
                         vidPlaying = true
                         v = document.getElementById('introVideo')
                         v.width = $(window).width()
