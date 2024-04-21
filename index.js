@@ -228,6 +228,7 @@ io.on('connection', (socket) => {
         if (data.action == 'reset') {
             if (state[data.instance] != 'running') {
                 state[data.instance] = 'reset'
+                log[data.instance] = ''
                 logger.info('Game reset', {
                     gm: data.gm,
                     game: games[data.instance].name,
