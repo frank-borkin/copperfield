@@ -71,6 +71,28 @@
                 }
             }
 
+            function introVidEnded(event) {
+                socket.emit('action', {
+                    instance: instance,
+                    action: 'start',
+                })
+                $('#introVideo').hide()
+                $('#bgVideo').show()
+                vidPlaying = false
+                v.removeEventListener('ended', introVidEnded)
+            }
+
+            function outroVidEnded(event) {
+                socket.emit('action', {
+                    instance: instance,
+                    action: 'post',
+                })
+                $('#introVideo').hide()
+                $('#bgVideo').show()
+                vidPlaying = false
+                v.removeEventListener('ended', outroVidEnded)
+            }
+
             // Extract ?instance=4. This should match games.json
             const urlParams = new URLSearchParams(window.location.search)
             const instance = urlParams.get('instance')
@@ -120,15 +142,7 @@
                         $('#introVideo').show()
                         v.play()
 
-                        v.addEventListener('ended', (event) => {
-                            socket.emit('action', {
-                                instance: instance,
-                                action: 'start',
-                            })
-                            $('#introVideo').hide()
-                            $('#bgVideo').show()
-                            vidPlaying = false
-                        })
+                        v.addEventListener('ended', introVidEnded)
                     }
                 }
                 if (data.state == 'win' || data.state == 'fail') {
@@ -143,15 +157,7 @@
                         $('#introVideo').show()
                         v.play()
 
-                        v.addEventListener('ended', (event) => {
-                            socket.emit('action', {
-                                instance: instance,
-                                action: 'post',
-                            })
-                            $('#introVideo').hide()
-                            $('#bgVideo').show()
-                            vidPlaying = false
-                        })
+                        v.addEventListener('ended', outroVidEnded)
                     }
                 }
             })
