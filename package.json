@@ -6,7 +6,7 @@
     "name": "copperfield",
     "private": true,
     "type": "module",
-    "version": "0.0.23",
+    "version": "0.0.24",
     "dependencies": {
         "@logtail/node": "^0.4.21",
         "@logtail/winston": "^0.4.21",
