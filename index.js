@@ -94,7 +94,7 @@ app.use(express.static(join(__dirname, 'public')))
 const server = require('http').createServer(app)
 const io = require('socket.io')(server)
 server.listen(port, () => {
-    logger.info('Server started')
+    logger.info(`Server started v${process.env.npm_package_version}`)
 })
 
 // State management.
