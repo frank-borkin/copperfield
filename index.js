@@ -228,8 +228,8 @@ io.on('connection', (socket) => {
                 time_left_secs: timeLeft,
                 clues_used: num_clues[data.instance],
             })
-            log[data.instance] +=
-                `${padStart(mins, 2, '0')}:${padStart(seconds, 2, '0')} ${data.gm} team won.<br>`
+            log[data.instance] =
+                `${padStart(mins, 2, '0')}:${padStart(seconds, 2, '0')} ${data.gm} team won.<br>${log[data.instance]}`
         }
         if (data.action == 'reset') {
             if (state[data.instance] != 'running') {
@@ -248,8 +248,8 @@ io.on('connection', (socket) => {
                 gm: data.gm,
                 game: games[data.instance].name,
             })
-            log[data.instance] +=
-                `${padStart(mins, 2, '0')}:${padStart(seconds, 2, '0')} ${data.gm} added 60 seconds.<br>`
+            log[data.instance] =
+                `${padStart(mins, 2, '0')}:${padStart(seconds, 2, '0')} ${data.gm} added 60 seconds.<br>${log[data.instance]}`
         }
         if (data.action == 'removetime') {
             console.log(timers[data.instance])
@@ -258,8 +258,8 @@ io.on('connection', (socket) => {
                 gm: data.gm,
                 game: games[data.instance].name,
             })
-            log[data.instance] +=
-                `${padStart(mins, 2, '0')}:${padStart(seconds, 2, '0')} ${data.gm} removed 60 seconds.<br>`
+            log[data.instance] =
+                `${padStart(mins, 2, '0')}:${padStart(seconds, 2, '0')} ${data.gm} removed 60 seconds.<br>${log[data.instance]}`
         }
     })
 
@@ -275,16 +275,16 @@ io.on('connection', (socket) => {
                 gm: data.gm,
                 game: games[data.instance].name,
             })
-            log[data.instance] +=
-                `${padStart(mins, 2, '0')}:${padStart(seconds, 2, '0')} ${data.gm} cleared clue<br>`
+            log[data.instance] =
+                `${padStart(mins, 2, '0')}:${padStart(seconds, 2, '0')} ${data.gm} cleared clue<br>${log[data.instance]}`
         } else {
             logger.info('Clue sent', {
                 gm: data.gm,
                 game: games[data.instance].name,
                 clue: data.clue,
             })
-            log[data.instance] +=
-                `${padStart(mins, 2, '0')}:${padStart(seconds, 2, '0')} ${data.gm} sent clue: ${data.clue}<br>`
+            log[data.instance] =
+                `${padStart(mins, 2, '0')}:${padStart(seconds, 2, '0')} ${data.gm} sent clue: ${data.clue}<br>${log[data.instance]}`
             num_clues[data.instance]++
         }
         setTimeout(() => {
