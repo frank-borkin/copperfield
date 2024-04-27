@@ -200,6 +200,14 @@ io.on('connection', (socket) => {
                 state[data.instance] == 'fail'
             ) {
                 state[data.instance] = 'post'
+                setTimeout(() => {
+                    state[data.instance] = 'reset'
+                    log[data.instance] = ''
+                    logger.info('Game auto reset', {
+                        gm: 'System',
+                        game: games[data.instance].name,
+                    })
+                }, 120000) // 2 mins
             }
         }
         if (data.action == 'start') {
@@ -290,7 +298,7 @@ io.on('connection', (socket) => {
         setTimeout(() => {
             clues[data.instance] = ''
             logger.info('Clue auto-cleared', {
-                gm: data.gm,
+                gm: 'System',
                 game: games[data.instance].name,
             })
         }, 60000) //60s
