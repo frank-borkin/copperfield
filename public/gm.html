@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" style="background-size: cover" id="main">
     <head>
         <title>Copperfield</title>
         <meta charset="UTF-8" />
@@ -304,6 +304,10 @@
 
                     $('#shortclues').append('</optgroup>')
                 })
+                $('#main').css(
+                    'background',
+                    `url("${games[game].gmBackground}") no-repeat center center fixed`
+                )
             }
 
             $('#games').change(setGame)
