@@ -102,6 +102,7 @@ var timers = Array() //of date objects. Per instance
 var state = Array() //The states are intro, reset, running, win, fail and post. The actions are intro, reset, start, end (lose), finish (win) and post (end vid completed). Pause/resume were removed. per instance
 var clues = Array() //Current clue or empty string. Per instance
 var log = Array() //Current game log
+var timeouts = Array() //To deal with multiple clues in flight
 var instances = Array()
 var num_clues = Array()
 var win_time = Array() //Seconds
@@ -273,6 +274,7 @@ io.on('connection', (socket) => {
 
     // Am empty string clears the screen, anything else is a clue
     socket.on('clue', (data) => {
+        clearTimeout(timeouts[data.instance]) //If we send 2 clues within 60s we need to make sure the first doesn't clean out the second.
         clues[data.instance] = data.clue
         var timeLeft = getTimeLeft(data.instance)
         const mins = Math.floor(timeLeft / 60)
@@ -295,7 +297,7 @@ io.on('connection', (socket) => {
                 `${padStart(mins, 2, '0')}:${padStart(seconds, 2, '0')} ${data.gm} sent clue: ${data.clue}<br>${log[data.instance]}`
             num_clues[data.instance]++
         }
-        setTimeout(() => {
+        timeouts[data.instance] = setTimeout(() => {
             clues[data.instance] = ''
             logger.info('Clue auto-cleared', {
                 gm: 'System',
