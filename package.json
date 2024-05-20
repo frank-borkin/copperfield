@@ -25,7 +25,7 @@
         "test": "eslint"
     },
     "devDependencies": {
-        "eslint": "^8.57.0"
+        "eslint": "^9.3.0"
     },
     "prettier": {
         "trailingComma": "es5",
