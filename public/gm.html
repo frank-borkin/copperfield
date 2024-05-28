@@ -74,6 +74,9 @@
             .action {
                 cursor: pointer;
             }
+            .cluelabel {
+                text-align: center;
+            }
         </style>
     </head>
 
@@ -289,7 +292,9 @@
                 }
                 $('#timeline').empty()
                 $.each(games[game].timeline, function (i, t) {
-                    $('#timeline').append(`<div class="col">${t}</div>`)
+                    $('#timeline').append(
+                        `<div class="col cluelabel">${t}</div>`
+                    )
                 })
                 $('#shortclues').empty()
                 $('#shortclues').append(
