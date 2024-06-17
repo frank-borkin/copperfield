@@ -14,7 +14,7 @@
         "@sentry/profiling-node": "^7.110.1",
         "date-and-time": "^3.1.1",
         "express": "^4.19.2",
-        "prettier": "^3.2.5",
+        "prettier": "^3.3.2",
         "socket.io": "^4.7.5",
         "string.prototype.padstart": "^3.1.6",
         "winston": "^3.13.0"
