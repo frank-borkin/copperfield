@@ -1,6 +1,18 @@
+import { init } from '@sentry/node'
+//Setup Sentry
+if (process.env.SENTRY_TOKEN) {
+    init({
+        dsn: process.env.SENTRY_TOKEN,
+        integrations: [nodeProfilingIntegration()],
+        // Performance Monitoring
+        tracesSampleRate: 1.0, //  Capture 100% of the transactions
+        // Set sampling rate for profiling - this is relative to tracesSampleRate
+        profilesSampleRate: 1.0,
+    })
+}
+
 import { createRequire } from 'module'
 import { fileURLToPath } from 'url'
-import { init, Integrations, Handlers } from '@sentry/node'
 import { join } from 'path'
 import { Logtail } from '@logtail/node'
 import { LogtailTransport } from '@logtail/winston'
@@ -68,26 +80,11 @@ const logger = createLogger({
 const port = process.env.PORT || 3000
 const app = express()
 
-//Setup Sentry
 if (process.env.SENTRY_TOKEN) {
-    init({
-        dsn: process.env.SENTRY_TOKEN,
-        integrations: [
-            // enable HTTP calls tracing
-            new Integrations.Http({ tracing: true }),
-            // enable Express.js middleware tracing
-            new Integrations.Express({ app }),
-            nodeProfilingIntegration(),
-        ],
-        // Performance Monitoring
-        tracesSampleRate: 1.0, //  Capture 100% of the transactions
-        // Set sampling rate for profiling - this is relative to tracesSampleRate
-        profilesSampleRate: 1.0,
-    })
-
-    app.use(Handlers.requestHandler())
-    app.use(Handlers.tracingHandler())
-    app.use(Handlers.errorHandler())
+    Sentry.setupExpressErrorHandler(app)
+    //    app.use(Handlers.requestHandler())
+    //    app.use(Handlers.tracingHandler())
+    //    app.use(Handlers.errorHandler())
 }
 
 app.use(express.static(join(__dirname, 'public')))
