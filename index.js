@@ -1,7 +1,6 @@
-import { init } from '@sentry/node'
-//Setup Sentry
+import * as Sentry from '@sentry/node'
 if (process.env.SENTRY_TOKEN) {
-    init({
+    Sentry.init({
         dsn: process.env.SENTRY_TOKEN,
         integrations: [nodeProfilingIntegration()],
         // Performance Monitoring
