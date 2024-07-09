@@ -257,6 +257,9 @@
                     action: action,
                     gm: document.getElementById('user').innerHTML,
                 })
+                if (action == 'finish') {
+                    setTimeout(logout, 120000) // 2 mins
+                }
             })
 
             $('#shortclues').change(function () {
