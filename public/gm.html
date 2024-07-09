@@ -44,6 +44,8 @@
                         )
                         const user = await auth0Client.getUser()
                         document.getElementById('user').innerHTML = user.name
+                        document.getElementById('games').value =
+                            localStorage.getItem('game') || 0
                     } else {
                         await auth0Client.loginWithRedirect({
                             authorizationParams: {
@@ -55,6 +57,8 @@
                 } else {
                     const user = await auth0Client.getUser()
                     document.getElementById('user').innerHTML = user.name
+                    document.getElementById('games').value =
+                        localStorage.getItem('game') || 0
                 }
             }
         </script>
@@ -221,6 +225,8 @@
                         )
                     })
                     games = data.games
+                    document.getElementById('games').value =
+                        localStorage.getItem('game') || 0
                     setGame()
                 })
             })
@@ -319,6 +325,7 @@
                     'background',
                     `url("${games[game].gmBackground}") no-repeat center center fixed`
                 )
+                localStorage.setItem('game', game)
             }
 
             $('#games').change(setGame)
