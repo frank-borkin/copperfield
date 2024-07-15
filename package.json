@@ -16,7 +16,7 @@
         "express": "^4.19.2",
         "socket.io": "^4.7.5",
         "string.prototype.padstart": "^3.1.6",
-        "winston": "^3.13.0"
+        "winston": "^3.13.1"
     },
     "scripts": {
         "release": "git commit -m \"$COMMIT_MSG\" -a && npm version patch && git push --follow-tags",
