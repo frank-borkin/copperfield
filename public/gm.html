@@ -235,6 +235,7 @@
                 game = $('#games option:selected').val()
                 for (var i = 0; i < games[game].nodes; i++) {
                     if (games[game].instances[i].id == data.instance) {
+                        currentState = data.state
                         $('#plabel' + i).text(
                             games[game].instances[i].name +
                                 ' (' +
@@ -252,6 +253,25 @@
                             $('#progress').css('background-color', 'green')
                         }
                         $('#log').html(data.log)
+                        // states = reset, intro, running, fail, win, post, running
+                        //Enable the Start button
+                        if (data.state == 'reset') {
+                            $('#intro').prop('disabled', false)
+                            $('#reset').prop('disabled', true)
+                            $('#finish').prop('disabled', true)
+                        }
+                        //Enable the Stop button
+                        if (data.state == 'running') {
+                            $('#intro').prop('disabled', true)
+                            $('#reset').prop('disabled', true)
+                            $('#finish').prop('disabled', false)
+                        }
+                        //Enable the Reset button
+                        if (data.state == 'post') {
+                            $('#intro').prop('disabled', true)
+                            $('#reset').prop('disabled', false)
+                            $('#finish').prop('disabled', true)
+                        }
                     }
                 }
             })
