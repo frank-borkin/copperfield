@@ -81,6 +81,9 @@
             .cluelabel {
                 text-align: center;
             }
+            span[disabled] {
+                pointer-events: none;
+            }
         </style>
     </head>
 
@@ -256,21 +259,21 @@
                         // states = reset, intro, running, fail, win, post, running
                         //Enable the Start button
                         if (data.state == 'reset') {
-                            $('#intro').prop('disabled', false)
-                            $('#reset').prop('disabled', true)
-                            $('#finish').prop('disabled', true)
+                            $('#intro').attr('disabled', false)
+                            $('#reset').attr('disabled', true)
+                            $('#finish').attr('disabled', true)
                         }
                         //Enable the Stop button
                         if (data.state == 'running') {
-                            $('#intro').prop('disabled', true)
-                            $('#reset').prop('disabled', true)
-                            $('#finish').prop('disabled', false)
+                            $('#intro').attr('disabled', true)
+                            $('#reset').attr('disabled', true)
+                            $('#finish').attr('disabled', false)
                         }
                         //Enable the Reset button
                         if (data.state == 'post') {
-                            $('#intro').prop('disabled', true)
-                            $('#reset').prop('disabled', false)
-                            $('#finish').prop('disabled', true)
+                            $('#intro').attr('disabled', true)
+                            $('#reset').attr('disabled', false)
+                            $('#finish').attr('disabled', true)
                         }
                     }
                 }
