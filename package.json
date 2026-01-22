@@ -8,12 +8,12 @@
     "type": "module",
     "version": "1.0.9",
     "dependencies": {
-        "@logtail/node": "^0.4.21",
-        "@logtail/winston": "^0.4.23",
-        "@sentry/node": "^8.16.0",
-        "@sentry/profiling-node": "^8.55.0",
-        "date-and-time": "^3.6.0",
-        "express": "^4.22.1",
+        "@logtail/node": "^0.5.6",
+        "@logtail/winston": "^0.5.6",
+        "@sentry/node": "^10.36.0",
+        "@sentry/profiling-node": "^10.36.0",
+        "date-and-time": "^4.2.0",
+        "express": "^5.2.1",
         "socket.io": "^4.8.3",
         "string.prototype.padstart": "^3.1.7",
         "winston": "^3.19.0"
@@ -24,7 +24,7 @@
         "test": "eslint"
     },
     "devDependencies": {
-        "eslint": "^8.57.1",
+        "eslint": "^9.39.2",
         "prettier": "^3.8.1"
     },
     "prettier": {
