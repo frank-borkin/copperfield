@@ -10,7 +10,7 @@
     "dependencies": {
         "@logtail/node": "^0.5.6",
         "@logtail/winston": "^0.5.6",
-        "@sentry/node": "^10.36.0",
+        "@sentry/node": "^10.38.0",
         "@sentry/profiling-node": "^10.36.0",
         "date-and-time": "^4.2.0",
         "express": "^5.2.1",
