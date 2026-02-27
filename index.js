@@ -117,7 +117,7 @@ function getTimeLeft(instance) {
     var timeLeft = instances[instance].gameLength //Default
     if (state[instance] == 'running') {
         var now = new Date()
-        timeLeft = date.subtract(timers[instance], now).toSeconds()
+        timeLeft = date.subtract(now, timers[instance]).toSeconds().value
         if (timeLeft <= 0) {
             state[instance] = 'fail'
         }
@@ -224,7 +224,7 @@ io.on('connection', (socket) => {
             state[data.instance] = 'win'
             var now = new Date()
             win_time[data.instance] = date
-                .subtract(timers[data.instance], now)
+                .subtract(now, timers[data.instance])
                 .toSeconds()
             logger.info('Team Won', {
                 gm: data.gm,
