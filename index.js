@@ -21,7 +21,7 @@ import {
     transports as _transports,
     createLogger,
 } from 'winston'
-import date from 'date-and-time'
+import { format } from 'date-and-time'
 import express from 'express'
 import padStart from 'string.prototype.padstart'
 import path from 'path'
