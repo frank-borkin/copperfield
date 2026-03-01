@@ -225,7 +225,7 @@ io.on('connection', (socket) => {
             var now = new Date()
             win_time[data.instance] = date
                 .subtract(now, timers[data.instance])
-                .toSeconds()
+                .toSeconds().value
             logger.info('Team Won', {
                 gm: data.gm,
                 game: games[data.instance].name,
