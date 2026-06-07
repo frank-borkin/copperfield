@@ -6,10 +6,10 @@ Copperfield is OSS Escape Room Management.
 
 ## How to run (Dev / Test)
 
--   Sign up to auth0.com
--   (optional) Sign up to logtail
--   Copy the example files in config/
--   Drop the appropriate files into media/
+- Sign up to auth0.com
+- (optional) Sign up to logtail
+- Copy the example files in config/
+- Drop the appropriate files into media/
 
 ```
 $ npm ci
@@ -20,9 +20,9 @@ Optionally, specify a port by supplying the `PORT` env variable.
 
 Clients should go to http://server:3000/room.html?instance=0. Due to _reasons_ Chrome won't autoplay videos unless you click on them first. There are 3 workarounds for this:
 
--   Use firefox.
--   Go to chrome://settings/content/sound and add the server to "Allow to play sounds"
--   Start chrome with `chrome.exe --autoplay-policy=no-user-gesture-required`
+- Use firefox.
+- Go to chrome://settings/content/sound and add the server to "Allow to play sounds"
+- Start chrome with `chrome.exe --autoplay-policy=no-user-gesture-required`
 
 ## How to run (Production)
 
@@ -42,12 +42,13 @@ Click the buttons.
 
 A Copperfield system consists of 3 parts:
 
--   A server instance. That's what this code is, there's a docker image at frankborkin/copperfield. It's possible for the server to be a cluster rather than a single instance.
-    -   The server keeps track of the game states, and holds info about what each game is and it's media.
--   The GM screen.
-    -   It's just a static bit of HTML, and is used for auth (via auth0), starting and stopping games, sending clues, etc.
-    -   The GM can look at multiple games at the same time, and mutiple GM's can manage the same game at the same time. This provides lots of flexability, but also opportunity for mistakes.
--   The room screen.
-    -   This is what's shown in game - typically the intro/exit vids, clues, etc.
+- A server instance. That's what this code is, there's a docker image at frankborkin/copperfield. It's possible for the server to be a cluster rather than a single instance.
+    - The server keeps track of the game states, and holds info about what each game is and it's media.
+- The GM screen.
+    - It's just a static bit of HTML, and is used for auth (via auth0), starting and stopping games, sending clues, etc.
+    - The GM can look at multiple games at the same time, and mutiple GM's can manage the same game at the same time. This provides lots of flexability, but also opportunity for mistakes.
+- The room screen.
+    - This is what's shown in game - typically the intro/exit vids, clues, etc.
+- There is also an overview screen, useful for managers to see the state of everything at /manager.html
 
 Data is transferred over websockets, media over http. Only the server requires an open port, and so could be hosted externally (although we'd strongly suggest an additional layer of auth in this case).

@@ -163,10 +163,10 @@
                 <div class="col"></div>
             </div>
             <div class="row">
-                <div class="col">
+                <div class="col col-5">
                     <select class="form-select" id="shortclues"></select>
                 </div>
-                <div class="col">
+                <div class="col col-5">
                     <div class="form-floating">
                         <textarea
                             class="form-control"
@@ -191,6 +191,7 @@
                         Clear
                     </button>
                 </div>
+                <div class="col col-2" id="checklist"></div>
             </div>
             <div class="row" id="log"></div>
         </main>
@@ -348,6 +349,12 @@
                     'background',
                     `url("${games[game].gmBackground}") no-repeat center center fixed`
                 )
+                $('#checklist').empty()
+                $.each(games[game].tickItems, function (i, t) {
+                    $('#checklist').append(
+                        `<input type="checkbox" id="ti${i}" name="ti${i}" value="${t}"><label for="ti${i}">${t}</label><br>`
+                    )
+                })
                 localStorage.setItem('game', game)
             }
 
