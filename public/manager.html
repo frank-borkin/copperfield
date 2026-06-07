@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en" style="background-size: cover" id="main">
+    <head>
+        <title>Copperfield Manager</title>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link href="bootstrap.min.css" rel="stylesheet" />
+
+        <style>
+            .progress {
+                height: 45px;
+                font-size: 36px;
+            }
+
+            .row > * {
+                padding: 0;
+            }
+
+            #user {
+                color: white;
+            }
+            .action {
+                cursor: pointer;
+            }
+            .cluelabel {
+                text-align: center;
+            }
+            span[disabled] {
+                pointer-events: none;
+            }
+        </style>
+    </head>
+
+    <body>
+        <main class="container" style="padding-top: 75px" id="main"></main>
+
+        <script src="jquery-3.7.1.slim.min.js"></script>
+        <script src="bootstrap.bundle.min.js"></script>
+        <script src="/socket.io/socket.io.js"></script>
+        <script>
+            var game = 0
+            const socket = io({
+                transports: ['websocket'],
+            })
+            var games = [
+                {
+                    nodes: 0,
+                    instances: [
+                        {
+                            id: 0,
+                            name: 'Loading...',
+                        },
+                    ],
+                },
+            ]
+
+            socket.on('connect', function () {
+                socket.emit('gm', (data) => {
+                    games = data.games
+                    for (var game = 0; i < games.length; game++) {
+                        $('#main').append(
+                            '<div class="row" id="p' +
+                                game +
+                                '" style="display: flex"><div class="col" id="plabel' +
+                                game +
+                                '"></div><div class="progress col-10"><div id="progress' +
+                                game +
+                                '" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="3600"></div></div></div>'
+                        )
+                    }
+                })
+            })
+
+            socket.on('status', (data) => {
+                for (var game = 0; i < games.length; game++) {
+                    for (var i = 0; i < games[game].nodes; i++) {
+                        if (games[game].instances[i].id == data.instance) {
+                            currentState = data.state
+                            $('#plabel' + i).text(
+                                games[game].instances[i].name +
+                                    ' (' +
+                                    data.state +
+                                    ')'
+                            )
+                            $('#progress' + i).html(data.time)
+                            var pc = (3600 - data.secondsLeft) / 36
+                            $('#progress' + i).css('width', pc + '%')
+                            if (data.secondsLeft < 120) {
+                                $('#progress' + i).css(
+                                    'background-color',
+                                    'red'
+                                )
+                            } else if (data.secondsLeft < 300) {
+                                $('#progress' + i).css(
+                                    'background-color',
+                                    'orange'
+                                )
+                            } else {
+                                $('#progress' + i).css(
+                                    'background-color',
+                                    'green'
+                                )
+                            }
+                        }
+                    }
+                }
+            })
+        </script>
+        <script
+            type="module"
+            src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"
+        ></script>
+        <script
+            nomodule
+            src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"
+        ></script>
+    </body>
+</html>
