@@ -57,7 +57,7 @@
             socket.on('connect', function () {
                 socket.emit('gm', (data) => {
                     games = data.games
-                    for (var game = 0; i < games.length; game++) {
+                    for (var game = 0; game < games.length; game++) {
                         $('#main').append(
                             '<div class="row" id="p' +
                                 game +
@@ -72,7 +72,7 @@
             })
 
             socket.on('status', (data) => {
-                for (var game = 0; i < games.length; game++) {
+                for (var game = 0; game < games.length; game++) {
                     for (var i = 0; i < games[game].nodes; i++) {
                         if (games[game].instances[i].id == data.instance) {
                             currentState = data.state
