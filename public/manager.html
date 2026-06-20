@@ -12,6 +12,10 @@
                 font-size: 36px;
             }
 
+            .row {
+                padding-bottom: 10px;
+            }
+
             .row > * {
                 padding: 0;
             }
@@ -28,11 +32,14 @@
             span[disabled] {
                 pointer-events: none;
             }
+            #main {
+                margin: 50px;
+            }
         </style>
     </head>
 
     <body>
-        <main class="container" style="padding-top: 75px" id="main"></main>
+        <main class="container" id="main"></main>
 
         <script src="jquery-3.7.1.slim.min.js"></script>
         <script src="bootstrap.bundle.min.js"></script>
@@ -58,7 +65,7 @@
                 socket.emit('gm', (data) => {
                     games = data.games
                     for (var game = 0; game < games.length; game++) {
-                        $('#main').append(
+                        $('main').append(
                             '<div class="row" id="p' +
                                 game +
                                 '" style="display: flex"><div class="col" id="plabel' +
@@ -73,34 +80,25 @@
 
             socket.on('status', (data) => {
                 for (var game = 0; game < games.length; game++) {
-                    for (var i = 0; i < games[game].nodes; i++) {
-                        if (games[game].instances[i].id == data.instance) {
-                            currentState = data.state
-                            $('#plabel' + i).text(
-                                games[game].instances[i].name +
-                                    ' (' +
-                                    data.state +
-                                    ')'
+                    if (data.instance == game) {
+                        $('#plabel' + game).text(
+                            games[game].name + ' (' + data.state + ')'
+                        )
+                        $('#progress' + game).html(data.time)
+                        var pc = (3600 - data.secondsLeft) / 36
+                        $('#progress' + game).css('width', pc + '%')
+                        if (data.secondsLeft < 120) {
+                            $('#progress' + game).css('background-color', 'red')
+                        } else if (data.secondsLeft < 300) {
+                            $('#progress' + game).css(
+                                'background-color',
+                                'orange'
                             )
-                            $('#progress' + i).html(data.time)
-                            var pc = (3600 - data.secondsLeft) / 36
-                            $('#progress' + i).css('width', pc + '%')
-                            if (data.secondsLeft < 120) {
-                                $('#progress' + i).css(
-                                    'background-color',
-                                    'red'
-                                )
-                            } else if (data.secondsLeft < 300) {
-                                $('#progress' + i).css(
-                                    'background-color',
-                                    'orange'
-                                )
-                            } else {
-                                $('#progress' + i).css(
-                                    'background-color',
-                                    'green'
-                                )
-                            }
+                        } else {
+                            $('#progress' + game).css(
+                                'background-color',
+                                'green'
+                            )
                         }
                     }
                 }
