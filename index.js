@@ -97,6 +97,7 @@ server.listen(port, () => {
 var timers = Array() //of date objects. Per instance
 var state = Array() //The states are intro, reset, running, win, fail and post. The actions are intro, reset, start, end (lose), finish (win) and post (end vid completed). Pause/resume were removed. per instance
 var clues = Array() //Current clue or empty string. Per instance
+var audioclues = Array()
 var log = Array() //Current game log
 var timeouts = Array() //To deal with multiple clues in flight
 var instances = Array()
@@ -302,6 +303,21 @@ io.on('connection', (socket) => {
         }, 60000) //60s
     })
 
+    socket.on('audioclue', (data) => {
+        audioclues[data.instance] = data.audioclue
+        var timeLeft = getTimeLeft(data.instance)
+        const mins = Math.floor(timeLeft / 60)
+        const seconds = Math.floor(timeLeft - mins * 60)
+        logger.info('Audio clue sent', {
+            gm: data.gm,
+            game: games[data.instance].name,
+            clue: data.audioclue,
+        })
+        log[data.instance] =
+            `${padStart(mins, 2, '0')}:${padStart(seconds, 2, '0')} ${data.gm} sent audioclue: ${data.audioclue}<br>${log[data.instance]}`
+        num_clues[data.instance]++
+    })
+
     function sendStatus(instance) {
         var timeLeft = getTimeLeft(instance)
         // Socket name is instance0, instance1, etc
@@ -316,6 +332,7 @@ io.on('connection', (socket) => {
                 padStart(Math.floor((timeLeft % 3600) % 60), 2, '0'),
             secondsLeft: timeLeft,
             clue: clues[instance],
+            audioclue: audioclues[instance],
             state: state[instance],
             log: log[instance],
         })
@@ -330,6 +347,7 @@ io.on('connection', (socket) => {
             timers[j] = new Date()
             log[j] = ''
             clues[j] = ''
+            audioclues[j] = ''
             num_clues[j] = 0
             win_time[j] = 0
             setInterval(sendStatus, 1000, instances[j].id)

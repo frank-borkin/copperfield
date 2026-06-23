@@ -165,6 +165,8 @@
             <div class="row">
                 <div class="col col-5">
                     <select class="form-select" id="shortclues"></select>
+                    <br />
+                    <select class="form-select" id="audioclues"></select>
                 </div>
                 <div class="col col-5">
                     <div class="form-floating">
@@ -189,6 +191,13 @@
                         id="clueclear"
                     >
                         Clear
+                    </button>
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                        id="audiocluesubmit"
+                    >
+                        Send Audio
                     </button>
                 </div>
                 <div class="col col-2" id="checklist"></div>
@@ -304,6 +313,14 @@
                 })
             })
 
+            $('#audiocluesubmit').click(function () {
+                socket.emit('audioclue', {
+                    instance: game,
+                    audioclue: $('#audioclues option:selected').val(),
+                    gm: document.getElementById('user').innerHTML,
+                })
+            })
+
             $('#clueclear').click(function () {
                 $('#cluebox').val('')
                 socket.emit('clue', {
@@ -323,12 +340,14 @@
                     $('#plabel' + i).text(games[game].instances[i].name)
                     $('#p' + i).css('display', 'flex')
                 }
+
                 $('#timeline').empty()
                 $.each(games[game].timeline, function (i, t) {
                     $('#timeline').append(
                         `<div class="col cluelabel">${t}</div>`
                     )
                 })
+
                 $('#shortclues').empty()
                 $('#shortclues').append(
                     '<option selected disabled>Quick clues</option>'
@@ -342,9 +361,27 @@
                             `<option value="${i}">${c}</option>`
                         )
                     })
-
                     $('#shortclues').append('</optgroup>')
                 })
+
+                $('#audioclues').empty()
+                $('#audioclues').append(
+                    '<option selected disabled>Audio clues</option>'
+                )
+                $.each(games[game].audioclues, function (cluegrougroup, clue) {
+                    $('#audioclues').append(
+                        `<optgroup label="${cluegrougroup}">`
+                    )
+                    $.each(clue, function (i, c) {
+                        Object.entries(c).forEach(([key, value]) => {
+                            $('#audioclues').append(
+                                `<option value="${key}">${value}</option>`
+                            )
+                        })
+                    })
+                    $('#audioclues').append('</optgroup>')
+                })
+
                 $('#main').css(
                     'background',
                     `url("${games[game].gmBackground}") no-repeat center center fixed`

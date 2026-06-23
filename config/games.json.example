@@ -1,26 +1,43 @@
-[{
+[
+    {
         "id": 0,
         "name": "An Hour to Kill",
         "nodes": 1,
-        "instances": [{
-            "id": 0,
-            "name": "HTK",
-            "bgType": "pic",
-            "bgPath": "media/backgrounds/black.jpg",
-            "timerStarted": false,
-            "clueSound": "media/sounds/ahem.mp3",
-            "introVideo": "media/videos/htk-intro.mp4",
-            "winVideo": "media/videos/HTK-Win.mp4",
-            "loseVideo": "media/videos/HTK-Lose.mp4"
-        }],
+        "instances": [
+            {
+                "id": 0,
+                "name": "HTK",
+                "bgType": "pic",
+                "bgPath": "media/backgrounds/black.jpg",
+                "timerStarted": false,
+                "clueSound": "media/sounds/ahem.mp3",
+                "introVideo": "media/videos/htk-intro.mp4",
+                "winVideo": "media/videos/HTK-Win.mp4",
+                "loseVideo": "media/videos/HTK-Lose.mp4"
+            }
+        ],
         "gameLength": 3600,
-        "timeline": ["Start", "", "Nudge 1", "Nudge 2", "Decoding", "", "Posters", "Husbands", "", "Call Sam", "UV Light", ""]
+        "timeline": [
+            "Start",
+            "",
+            "Nudge 1",
+            "Nudge 2",
+            "Decoding",
+            "",
+            "Posters",
+            "Husbands",
+            "",
+            "Call Sam",
+            "UV Light",
+            ""
+        ]
     },
     {
         "id": 1,
         "name": "The Crazy Cat Lady (Dual)",
         "nodes": 2,
-        "instances": [{
+        "instances": [
+            {
                 "id": 1,
                 "name": "Left",
                 "bgType": "pic",
@@ -50,17 +67,19 @@
         "id": 2,
         "name": "The Crazy Cat Lady",
         "nodes": 2,
-        "instances": [{
-            "id": 3,
-            "name": "CCL",
-            "bgType": "pic",
-            "bgPath": "media/backgrounds/black.jpg",
-            "timerStarted": false,
-            "clueSound": "media/sounds/ahem.mp3",
-            "introVideo": "media/videos/htk-intro.mp4",
-            "winVideo": "media/videos/HTK-Win.mp4",
-            "loseVideo": "media/videos/HTK-Lose.mp4"
-        }],
+        "instances": [
+            {
+                "id": 3,
+                "name": "CCL",
+                "bgType": "pic",
+                "bgPath": "media/backgrounds/black.jpg",
+                "timerStarted": false,
+                "clueSound": "media/sounds/ahem.mp3",
+                "introVideo": "media/videos/htk-intro.mp4",
+                "winVideo": "media/videos/HTK-Win.mp4",
+                "loseVideo": "media/videos/HTK-Lose.mp4"
+            }
+        ],
         "gameLength": 3600,
         "timeline": ["", "", "", "", "", "", "", "", "", "", "", ""]
     },
@@ -68,35 +87,51 @@
         "id": 3,
         "name": "Rob the Bank",
         "nodes": 1,
-        "instances": [{
-            "id": 4,
-            "name": "RTB",
-            "bgType": "pic",
-            "bgPath": "media/backgrounds/black.jpg",
-            "timerStarted": false,
-            "clueSound": "media/sounds/ahem.mp3",
-            "introVideo": "media/videos/htk-intro.mp4",
-            "winVideo": "media/videos/HTK-Win.mp4",
-            "loseVideo": "media/videos/HTK-Lose.mp4"
-        }],
+        "instances": [
+            {
+                "id": 4,
+                "name": "RTB",
+                "bgType": "pic",
+                "bgPath": "media/backgrounds/black.jpg",
+                "timerStarted": false,
+                "clueSound": "media/sounds/ahem.mp3",
+                "introVideo": "media/videos/htk-intro.mp4",
+                "winVideo": "media/videos/HTK-Win.mp4",
+                "loseVideo": "media/videos/HTK-Lose.mp4"
+            }
+        ],
         "gameLength": 3600,
-        "timeline": ["", "", "", "", "", "", "", "", "", "", "", ""]
+        "timeline": ["", "", "", "", "", "", "", "", "", "", "", ""],
+        "audioclues": {
+            "General": [],
+            "Foyer": [
+                {
+                    "media/rob-the-bank/audioclues/4.mp3": "Explore Angie's Van first"
+                },
+                {
+                    "media/rob-the-bank/audioclues/10.mp3": "Check bag again for magnetic key"
+                }
+            ],
+            "Vault": []
+        }
     },
     {
         "id": 4,
         "name": "Sausage Surprise",
         "nodes": 1,
-        "instances": [{
-            "id": 5,
-            "name": "SS",
-            "bgType": "pic",
-            "bgPath": "media/backgrounds/black.jpg",
-            "timerStarted": false,
-            "clueSound": "media/sounds/ahem.mp3",
-            "introVideo": "media/videos/htk-intro.mp4",
-            "winVideo": "media/videos/HTK-Win.mp4",
-            "loseVideo": "media/videos/HTK-Lose.mp4"
-        }],
+        "instances": [
+            {
+                "id": 5,
+                "name": "SS",
+                "bgType": "pic",
+                "bgPath": "media/backgrounds/black.jpg",
+                "timerStarted": false,
+                "clueSound": "media/sounds/ahem.mp3",
+                "introVideo": "media/videos/htk-intro.mp4",
+                "winVideo": "media/videos/HTK-Win.mp4",
+                "loseVideo": "media/videos/HTK-Lose.mp4"
+            }
+        ],
         "gameLength": 3600,
         "timeline": ["", "", "", "", "", "", "", "", "", "", "", ""]
     }

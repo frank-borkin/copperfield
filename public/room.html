@@ -104,7 +104,14 @@
             socket.on('status', (data) => {
                 console.log(data.status)
                 $('#clock').html(data.time)
-                if (data.clue && data.clue.length > 0) {
+                if (data.audioclue && data.audioclue.length > 0) {
+                    if (data.audioclue != lastClue) {
+                        console.log('Audio clue ' + lastClue)
+                        playSound(data.audioclue)
+                        lastClue = data.audioclue
+                        soundPlaying = false
+                    }
+                } else if (data.clue && data.clue.length > 0) {
                     $('#clock').html(data.clue)
                     $('#clock').css('font-size', '72px')
                     $('#clock').css('text-align', 'left')
