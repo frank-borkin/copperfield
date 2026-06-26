@@ -151,6 +151,7 @@ io.on('connection', (socket) => {
                 status: 'ok',
                 bgType: instances[i].bgType,
                 bgPath: instances[i].bgPath,
+                clueColour: instances[i].clueColour,
                 clueSound: instances[i].clueSound,
                 introVideo: instances[i].introVideo,
                 winVideo: instances[i].winVideo,

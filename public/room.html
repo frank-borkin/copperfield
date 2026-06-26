@@ -60,6 +60,7 @@
             var lastClue = ''
             var lastAudioClue = ''
             var winTime
+            var clueColour = 'white'
 
             function playSound(url) {
                 if (soundPlaying == false) {
@@ -193,6 +194,8 @@
                     introVideo = data.introVideo
                     winVideo = data.winVideo
                     loseVideo = data.loseVideo
+                    clueColour = data.clueColour ? data.clueColour : 'white'
+                    $('#clock').css('color', clueColour)
                 })
             })
         </script>
