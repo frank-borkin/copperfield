@@ -103,11 +103,13 @@ var timeouts = Array() //To deal with multiple clues in flight
 var instances = Array()
 var num_clues = Array()
 var win_time = Array() //Seconds
+var tick_items = Array()
 const games = require('./config/games.json')
 
 // Populate the instances array with the game instances we have on this site. The ID's may not be sequential.
 games.forEach(function (g) {
     g.instances.forEach(function (i) {
+        i.tickItems = g.tickItems || []
         instances.push(i)
     })
 })
@@ -156,6 +158,7 @@ io.on('connection', (socket) => {
                 introVideo: instances[i].introVideo,
                 winVideo: instances[i].winVideo,
                 loseVideo: instances[i].loseVideo,
+                tickItems: instances[i].tickItems || [],
             })
     })
 
@@ -319,6 +322,10 @@ io.on('connection', (socket) => {
         num_clues[data.instance]++
     })
 
+    socket.on('tickitem', (data) => {
+        tick_items[data.instance][data.item] = data.value;
+    })
+
     function sendStatus(instance) {
         var timeLeft = getTimeLeft(instance)
         // Socket name is instance0, instance1, etc
@@ -336,6 +343,7 @@ io.on('connection', (socket) => {
             audioclue: audioclues[instance],
             state: state[instance],
             log: log[instance],
+            tick_items: tick_items[instance]
         })
     }
 
@@ -351,6 +359,7 @@ io.on('connection', (socket) => {
             audioclues[j] = ''
             num_clues[j] = 0
             win_time[j] = 0
+            tick_items[j] = Array(instances[j].tickItems?.length).fill(false);
             setInterval(sendStatus, 1000, instances[j].id)
         }
     }

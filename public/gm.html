@@ -163,12 +163,12 @@
                 <div class="col"></div>
             </div>
             <div class="row">
-                <div class="col col-5">
+                <div class="col col-6">
                     <select class="form-select" id="shortclues"></select>
                     <br />
                     <select class="form-select" id="audioclues"></select>
                 </div>
-                <div class="col col-5">
+                <div class="col col-6">
                     <div class="form-floating">
                         <textarea
                             class="form-control"
@@ -200,9 +200,12 @@
                         Send Audio
                     </button>
                 </div>
-                <div class="col col-2" id="checklist"></div>
+                
             </div>
-            <div class="row" id="log"></div>
+            <div class="row">
+                <div class="col col-6" id="log"></div>
+                <div class="col col-6" id="checklist"></div>
+        </div>
         </main>
 
         <script src="jquery-3.7.1.slim.min.js"></script>
@@ -368,7 +371,7 @@
                 $('#audioclues').append(
                     '<option selected disabled>Audio clues</option>'
                 )
-                $.each(games[game].audioclues, function (cluegrougroup, clue) {
+                $.each(games[game].audioclues, function (cluegrougroup, clue) { 
                     $('#audioclues').append(
                         `<optgroup label="${cluegrougroup}">`
                     )
@@ -391,6 +394,14 @@
                     $('#checklist').append(
                         `<input type="checkbox" id="ti${i}" name="ti${i}" value="${t}"><label for="ti${i}">${t}</label><br>`
                     )
+                    $(`#ti${i}`).click(function () {
+                        socket.emit('tickitem', {
+                            instance: game,
+                            item: i,
+                            value: $(`#ti${i}`).is(":checked"),
+                            gm: document.getElementById('user').innerHTML,
+                        })
+                    })
                 })
                 localStorage.setItem('game', game)
             }

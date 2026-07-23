@@ -61,12 +61,13 @@
             var lastAudioClue = ''
             var winTime
             var clueColour = 'white'
+            var audio
 
             function playSound(url) {
                 if (soundPlaying == false) {
                     //By default, the sound will play over and over for each status msg
                     soundPlaying = true
-                    var audio = new Audio(url)
+                    audio = new Audio(url)
                     audio.addEventListener('canplaythrough', (event) => {
                         audio.play()
                     })
@@ -92,6 +93,13 @@
                 $('#introVideo').hide()
                 $('#bgVideo').show()
                 vidPlaying = false
+                audio.src = ''
+                audio.removeAttribute('src')
+                audio.load()
+                v = document.getElementById('introVideo')
+                v.src = ''
+                v.removeAttribute('src')
+                v.load()
                 v.removeEventListener('ended', outroVidEnded)
             }
 
