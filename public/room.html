@@ -204,6 +204,10 @@
                     loseVideo = data.loseVideo
                     clueColour = data.clueColour ? data.clueColour : 'white'
                     $('#clock').css('color', clueColour)
+                    clockTop = data.clockTop ? data.clockTop : '50%'
+                    $('#clock').css('top', clockTop)
+                    clockLeft = data.clockLeft ? data.clockLeft : '50%'
+                    $('#clock').css('left', clockLeft)
                 })
             })
         </script>
