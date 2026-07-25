@@ -9,6 +9,8 @@
                 background-color: black;
             }
 
+            ul {list-style-type: none;}
+
             #bgVideo {
                 position: fixed;
                 right: 0;
@@ -35,6 +37,16 @@
                 margin: 0 auto;
                 width: 1200px;
             }
+
+            #tickitems {
+                color: black;
+                font-size: 22px;
+                position: fixed;
+                top: 479px;
+                left: 200px;
+                margin: 0 auto;
+                width: 1200px;
+            }
         </style>
     </head>
 
@@ -42,7 +54,7 @@
         <video autoplay loop id="bgVideo" style="z-index: -5"></video>
         <video id="introVideo"></video>
         <div id="clock"></div>
-        <div id="clue"></div>
+        <div id="tickitems"></div>
 
         <script src="jquery-3.7.1.slim.min.js"></script>
         <script src="/socket.io/socket.io.js"></script>
@@ -62,6 +74,7 @@
             var winTime
             var clueColour = 'white'
             var audio
+            var tickItems = []
 
             function playSound(url) {
                 if (soundPlaying == false) {
@@ -146,6 +159,17 @@
                     data.state == 'ended'
                 ) {
                     $('#clock').html('')
+                    $('#tickitems').html('')
+                } else {
+                    $('#tickitems').empty()
+                    var list = $('<ul/>').appendTo('#tickitems');
+                    for (var i = 0; i < tickItems.length; i++) {
+                        if (data.tick_items[i]) {
+                            list.append(`<li>☑ <s>${tickItems[i]}</s></li>`);
+                        } else {
+                            list.append(`<li>☐ ${tickItems[i]}</li>`);
+                        }
+                    }          
                 }
                 if (data.state == 'post') {
                     $('#clock').html(winTime)
@@ -208,6 +232,7 @@
                     $('#clock').css('top', clockTop)
                     clockLeft = data.clockLeft ? data.clockLeft : '50%'
                     $('#clock').css('left', clockLeft)
+                    tickItems = data.tickItems
                 })
             })
         </script>
