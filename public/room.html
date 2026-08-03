@@ -33,9 +33,7 @@
                 position: fixed;
                 top: 50%;
                 left: 50%;
-                transform: translate(-50%, -50%);
                 margin: 0 auto;
-                width: 1200px;
             }
 
             #tickitems {
@@ -232,6 +230,13 @@
                     $('#clock').css('top', clockTop)
                     clockLeft = data.clockLeft ? data.clockLeft : '50%'
                     $('#clock').css('left', clockLeft)
+                    if (clockLeft=='50%' && clockTop=='50%')
+                    {
+                        $('#clock').css('transform', 'translate(-50%, -50%)')
+                        $('#clock').css('width', '1200px')
+                    } else {
+                        $('#clock').css('width', '450px')
+                    }
                     tickItems = data.tickItems
                 })
             })

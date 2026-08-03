@@ -288,6 +288,9 @@
                             $('#reset').attr('disabled', false)
                             $('#finish').attr('disabled', true)
                         }
+                        for (var j = 0; j < data.tick_items.length; j++) {
+                            $(`#ti${j}`).prop( "checked", data.tick_items[j] );
+                        }   
                     }
                 }
             })

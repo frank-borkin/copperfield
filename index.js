@@ -247,6 +247,7 @@ io.on('connection', (socket) => {
             if (state[data.instance] != 'running') {
                 state[data.instance] = 'reset'
                 log[data.instance] = ''
+                tick_items[data.instance] = Array(instances[data.instance].tickItems?.length).fill(false);
                 logger.info('Game reset', {
                     gm: data.gm,
                     game: games[data.instance].name,
