@@ -86,6 +86,30 @@ if (process.env.SENTRY_TOKEN) {
     //    app.use(Handlers.errorHandler())
 }
 
+// Serve the large, effectively-immutable media (mp3/mp4) with aggressive
+// caching. Only these extensions are matched, so HTML/CSS/JS keep the default
+// behaviour and remain editable without stale-cache problems.
+//
+// etag is disabled for media: Express/send emits *weak* ETags by default, and
+// weak validators are not allowed for range requests. That stops the browser
+// from caching and reusing byte ranges for <video>/<audio>, forcing a refetch
+// on every seek. With etag off it falls back to Last-Modified + immutable,
+// which range requests can cache.
+const mediaCache = express.static(join(__dirname, 'public'), {
+    etag: false,
+    maxAge: '365d',
+    immutable: true,
+})
+
+app.use((req, res, next) => {
+    if (/\.(mp3|mp4)$/i.test(req.path)) {
+        return mediaCache(req, res, next)
+    }
+    return next()
+})
+
+// Everything else (HTML, CSS, JS, images) uses Express defaults so edits are
+// picked up normally.
 app.use(express.static(join(__dirname, 'public')))
 const server = require('http').createServer(app)
 const io = require('socket.io')(server)
