@@ -105,6 +105,32 @@
                 }
             }
 
+            // Load the video source, then start playback once the browser has
+            // buffered enough. Relying on play() alone right after setting src
+            // races the load and can silently fail on a fresh (uncached) file.
+            function playVideo(videoEl, url, endedHandler) {
+                videoEl.addEventListener('ended', endedHandler)
+                videoEl.preload = 'auto'
+                videoEl.src = url
+                videoEl.load()
+                const startPlayback = () => {
+                    const p = videoEl.play()
+                    if (p !== undefined) {
+                        p.catch((err) => {
+                            console.warn('Video playback failed', err)
+                        })
+                    }
+                }
+                if (videoEl.readyState >= 3) {
+                    // HAVE_FUTURE_DATA or better: enough is buffered, play now.
+                    startPlayback()
+                } else {
+                    videoEl.addEventListener('canplay', startPlayback, {
+                        once: true,
+                    })
+                }
+            }
+
             function introVidEnded(event) {
                 socket.emit('action', {
                     instance: instance,
@@ -198,12 +224,9 @@
                         v = document.getElementById('introVideo')
                         v.width = $(window).width()
                         v.height = $(window).height()
-                        v.src = introVideo
                         $('#bgVideo').hide()
                         $('#introVideo').show()
-                        v.play()
-
-                        v.addEventListener('ended', introVidEnded)
+                        playVideo(v, introVideo, introVidEnded)
                     }
                 }
                 if (data.state == 'win' || data.state == 'fail') {
@@ -213,12 +236,13 @@
                         v = document.getElementById('introVideo')
                         v.width = $(window).width()
                         v.height = $(window).height()
-                        v.src = data.state == 'win' ? winVideo : loseVideo
                         $('#bgVideo').hide()
                         $('#introVideo').show()
-                        v.play()
-
-                        v.addEventListener('ended', outroVidEnded)
+                        playVideo(
+                            v,
+                            data.state == 'win' ? winVideo : loseVideo,
+                            outroVidEnded
+                        )
                     }
                 }
             })
