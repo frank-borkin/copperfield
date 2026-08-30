@@ -78,10 +78,30 @@
                 if (soundPlaying == false) {
                     //By default, the sound will play over and over for each status msg
                     soundPlaying = true
-                    audio = new Audio(url)
-                    audio.addEventListener('canplaythrough', (event) => {
-                        audio.play()
-                    })
+                    audio = new Audio()
+                    // Preload so the file (network or cache) is fetched before we try to play.
+                    audio.preload = 'auto'
+                    audio.src = url
+                    audio.load()
+                    // play() resolves once playback actually starts and rejects if the
+                    // browser blocks it or the file failed to load. This avoids relying
+                    // on canplaythrough, which may never fire for an already-cached file.
+                    const startPlayback = () => {
+                        const p = audio.play()
+                        if (p !== undefined) {
+                            p.catch((err) => {
+                                console.warn('Audio playback failed', err)
+                            })
+                        }
+                    }
+                    if (audio.readyState >= 3) {
+                        // HAVE_FUTURE_DATA or better: enough is buffered, play now.
+                        startPlayback()
+                    } else {
+                        audio.addEventListener('canplaythrough', startPlayback, {
+                            once: true,
+                        })
+                    }
                 }
             }
 
