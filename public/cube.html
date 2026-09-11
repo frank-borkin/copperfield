@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claw Controls</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Left panel: canvas ── */
+    #canvas-panel {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    /* ── Right panel: controls ── */
+    #controls-panel {
+      width: 220px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+      padding: 32px 20px;
+      border-left: 1px solid #e5e5e5;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .control-group label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 2px;
+    }
+
+    /* D-pad */
+    .dpad {
+      display: grid;
+      grid-template-columns: repeat(3, 44px);
+      grid-template-rows: repeat(3, 44px);
+      gap: 4px;
+    }
+
+    .dpad .spacer { background: none; }
+
+    /* Vertical pair */
+    .btn-pair {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Shared button style */
+    button {
+      width: 44px;
+      height: 44px;
+      border: 1.5px solid #d0d0d0;
+      border-radius: 8px;
+      background: #fafafa;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.12s, border-color 0.12s, transform 0.08s;
+      user-select: none;
+      color: #333;
+    }
+
+    button:hover {
+      background: #f0f0f0;
+      border-color: #aaa;
+    }
+
+    button:active {
+      background: #e4e4e4;
+      transform: scale(0.94);
+    }
+
+    .btn-wide {
+      width: 96px;
+      height: 44px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    /* Position readout */
+    #readout {
+      font-size: 11px;
+      color: #999;
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    #readout span {
+      color: #555;
+      font-weight: 600;
+    }
+
+    /* Open/close state badge */
+    #state-badge {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 4px 12px;
+      border-radius: 20px;
+      background: #e8f5e9;
+      color: #2e7d32;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    #state-badge.closed {
+      background: #fce4ec;
+      color: #c62828;
+    }
+  </style>
+</head>
+<body>
+
+<div id="canvas-panel">
+  <canvas id="scene"></canvas>
+</div>
+
+<div id="controls-panel">
+
+  <!-- Direction pad -->
+  <div class="control-group">
+    <label>Move</label>
+    <div class="dpad">
+      <div class="spacer"></div>
+      <button id="btn-up"    title="Up">↑</button>
+      <div class="spacer"></div>
+
+      <button id="btn-left"  title="Left">←</button>
+      <div class="spacer"></div>
+      <button id="btn-right" title="Right">→</button>
+
+      <div class="spacer"></div>
+      <button id="btn-down"  title="Down">↓</button>
+      <div class="spacer"></div>
+    </div>
+  </div>
+
+  <!-- Higher / Lower -->
+  <div class="control-group">
+    <label>Depth</label>
+    <div class="btn-pair">
+      <button id="btn-higher" title="Higher" style="width:96px;" class="btn-wide">Higher ↑</button>
+      <button id="btn-lower"  title="Lower"  style="width:96px;" class="btn-wide">Lower ↓</button>
+    </div>
+  </div>
+
+  <!-- Open / Close -->
+  <div class="control-group">
+    <label>State</label>
+    <div class="btn-pair">
+      <button id="btn-open"  class="btn-wide" style="width:96px;">Open</button>
+      <button id="btn-close" class="btn-wide" style="width:96px;">Close</button>
+    </div>
+    <div id="state-badge">OPEN</div>
+  </div>
+
+  <!-- Reset -->
+  <div class="control-group">
+    <button id="btn-reset" class="btn-wide" style="width:136px;">Reset</button>
+  </div>
+
+  <!-- Position readout -->
+  <div id="readout">
+    X: <span id="rx">1250</span> &nbsp;
+    Y: <span id="ry">750</span> &nbsp;
+    Z: <span id="rz">0</span>
+  </div>
+
+</div>
+
+<script>
+  // ── Dimensions (world units) ──────────────────────────────────────────────
+  const W = 2500;   // width  (X axis)
+  const D = 1500;   // depth  (Y axis)
+  const H = 1200;   // height (Z axis)
+  const STEP = 50;  // movement increment
+
+  // ── Dot state ─────────────────────────────────────────────────────────────
+  let dot = { x: W / 2, y: D / 2, z: 0 };
+  let isOpen = true;
+
+  // ── Canvas setup ──────────────────────────────────────────────────────────
+  const canvas = document.getElementById('scene');
+  const ctx    = canvas.getContext('2d');
+
+  // We'll compute a scale so the cube fits the panel
+  let scale, ox, oy;  // origin (screen coords of front-bottom-left corner)
+
+  function resize() {
+    const panel = document.getElementById('canvas-panel');
+    const pw = panel.clientWidth  - 48;
+    const ph = panel.clientHeight - 48;
+
+    // Isometric projection vectors (classic 2:1 pixel art iso):
+    //   X world → screen: (+cos30, +sin30) per unit  → (√3/2, 1/2)
+    //   Y world → screen: (-cos30, +sin30) per unit  → (-√3/2, 1/2)
+    //   Z world → screen: (0, -1) per unit
+    //
+    // Bounding box of the cube in screen space:
+    //   screen_w = (W + D) * cos30 * scale
+    //   screen_h = (W + D) * sin30 * scale  +  H * scale
+    const cos30 = Math.sqrt(3) / 2;
+    const sin30 = 0.5;
+
+    // Full screen-space bounding box of the cube
+    // Width:  (W + D) * cos30
+    // Height: (W + D) * sin30 + H
+    const rawW = (W + D) * cos30;
+    const rawH = (W + D) * sin30 + H;
+
+    scale = Math.min(pw / rawW, ph / rawH) * 0.88;
+
+    canvas.width  = pw;
+    canvas.height = ph;
+
+    // The topmost point of the cube in screen space is iso(0, 0, H).
+    // With our projection: sx = ox + (0-0)*cos30*scale = ox
+    //                      sy = oy - (0+0)*sin30*scale - H*scale = oy - H*scale
+    // The bottommost point is iso(W, D, 0):
+    //                      sy = oy - (W+D)*sin30*scale
+    // Wait — iso(W,D,0).sy = oy - (W+D)*sin30*scale  (this is actually LOWER on screen
+    // because sin30 is positive, so subtracting more makes it higher... let's think:
+    //
+    // sy = oy - (x+y)*sin30*scale - z*scale
+    // Largest sy (lowest on screen): x=0,y=0,z=0  → sy = oy
+    // Smallest sy (highest on screen): x=W,y=D,z=H → sy = oy - (W+D)*sin30*scale - H*scale
+    //
+    // So total screen height used = (W+D)*sin30*scale + H*scale = rawH*scale
+    // We want:
+    //   top    = oy - (W+D)*sin30*scale - H*scale  = (ph - rawH*scale) / 2
+    //   bottom = oy                                = (ph - rawH*scale) / 2 + rawH*scale
+    //
+    // Therefore: oy = (ph - rawH*scale) / 2 + rawH*scale = (ph + rawH*scale) / 2
+    //
+    // For ox, leftmost point is iso(0,D,*): sx = ox + (0-D)*cos30*scale = ox - D*cos30*scale
+    // Rightmost is iso(W,0,*): sx = ox + W*cos30*scale
+    // Total width = (W+D)*cos30*scale = rawW*scale
+    // ox - D*cos30*scale = (pw - rawW*scale) / 2
+    // ox = (pw - rawW*scale) / 2 + D*cos30*scale
+
+    ox = (pw - rawW * scale) / 2 + D * cos30 * scale;
+    oy = (ph + rawH * scale) / 2;
+
+    draw();
+  }
+
+  // ── Isometric projection ──────────────────────────────────────────────────
+  // Right-hand: X goes right-forward, Y goes left-forward, Z goes up.
+  function iso(x, y, z) {
+    const cos30 = Math.sqrt(3) / 2;
+    const sin30 = 0.5;
+    return {
+      sx: ox + (x - y) * cos30 * scale,
+      sy: oy - (x + y) * sin30 * scale - z * scale
+    };
+  }
+
+  // ── Drawing helpers ───────────────────────────────────────────────────────
+  function drawFace(pts, fill, stroke) {
+    ctx.beginPath();
+    ctx.moveTo(pts[0].sx, pts[0].sy);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].sx, pts[i].sy);
+    ctx.closePath();
+    ctx.fillStyle   = fill;
+    ctx.fill();
+    ctx.strokeStyle = stroke || '#666';
+    ctx.lineWidth   = 1;
+    ctx.stroke();
+  }
+
+  function drawGrid(x0, y0, z0, x1, y1, z1, nx, ny, nz, faceColor) {
+    // Draw grid lines on a face defined by varying two axes.
+    // We pass start/end world coords; this is a helper for the three visible faces.
+    // (skipped for brevity – we use simple solid faces with edge lines only)
+  }
+
+  // ── Main draw ─────────────────────────────────────────────────────────────
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 8 corners of the box
+    const p = (x, y, z) => iso(x, y, z);
+
+    // Bottom face corners
+    const b00 = p(0, 0, 0);
+    const bW0 = p(W, 0, 0);
+    const bWD = p(W, D, 0);
+    const b0D = p(0, D, 0);
+
+    // Top face corners
+    const t00 = p(0, 0, H);
+    const tW0 = p(W, 0, H);
+    const tWD = p(W, D, H);
+    const t0D = p(0, D, H);
+
+    // Three visible faces: top, left (X face, y=0 plane), right (Y face, x=W plane)
+    // Top face
+    drawFace([t00, tW0, tWD, t0D], '#e8f4f8', '#555');
+
+    // Left face (y=0, varies X and Z) — lighter
+    drawFace([b00, bW0, tW0, t00], '#d0e8f0', '#555');
+
+    // Right face (x=W, varies Y and Z) — darker
+    drawFace([bW0, bWD, tWD, tW0], '#b8d4e0', '#555');
+
+    // ── Grid lines ────────────────────────────────────────────────────────
+    ctx.strokeStyle = 'rgba(100,140,160,0.25)';
+    ctx.lineWidth   = 0.5;
+
+    const GRID_X = 5, GRID_Y = 5, GRID_Z = 4;
+
+    // Top face grid
+    for (let i = 0; i <= GRID_X; i++) {
+      const xv = (W / GRID_X) * i;
+      const a = iso(xv, 0, H), b = iso(xv, D, H);
+      ctx.beginPath(); ctx.moveTo(a.sx, a.sy); ctx.lineTo(b.sx, b.sy); ctx.stroke();
+    }
+    for (let j = 0; j <= GRID_Y; j++) {
+      const yv = (D / GRID_Y) * j;
+      const a = iso(0, yv, H), b = iso(W, yv, H);
+      ctx.beginPath(); ctx.moveTo(a.sx, a.sy); ctx.lineTo(b.sx, b.sy); ctx.stroke();
+    }
+
+    // Left face grid (y=0)
+    for (let i = 0; i <= GRID_X; i++) {
+      const xv = (W / GRID_X) * i;
+      const a = iso(xv, 0, 0), b = iso(xv, 0, H);
+      ctx.beginPath(); ctx.moveTo(a.sx, a.sy); ctx.lineTo(b.sx, b.sy); ctx.stroke();
+    }
+    for (let k = 0; k <= GRID_Z; k++) {
+      const zv = (H / GRID_Z) * k;
+      const a = iso(0, 0, zv), b = iso(W, 0, zv);
+      ctx.beginPath(); ctx.moveTo(a.sx, a.sy); ctx.lineTo(b.sx, b.sy); ctx.stroke();
+    }
+
+    // Right face grid (x=W)
+    for (let j = 0; j <= GRID_Y; j++) {
+      const yv = (D / GRID_Y) * j;
+      const a = iso(W, yv, 0), b = iso(W, yv, H);
+      ctx.beginPath(); ctx.moveTo(a.sx, a.sy); ctx.lineTo(b.sx, b.sy); ctx.stroke();
+    }
+    for (let k = 0; k <= GRID_Z; k++) {
+      const zv = (H / GRID_Z) * k;
+      const a = iso(W, 0, zv), b = iso(W, D, zv);
+      ctx.beginPath(); ctx.moveTo(a.sx, a.sy); ctx.lineTo(b.sx, b.sy); ctx.stroke();
+    }
+
+    // ── Dimension labels ──────────────────────────────────────────────────
+    ctx.fillStyle = '#777';
+    ctx.font      = `${Math.max(10, scale * 80)}px -apple-system, sans-serif`;
+    ctx.textAlign = 'center';
+
+    // Width label (along X, y=0, z=0 bottom edge)
+    const lw1 = iso(0,   0, 0), lw2 = iso(W, 0, 0);
+    const lwm = iso(W/2, 0, 0);
+    ctx.fillText('Player window', lwm.sx, lwm.sy + 16);
+
+    // Depth label (along Y, x=W, z=0)
+    const ldm = iso(W, D/2, 0);
+    ctx.fillText('Right wall', ldm.sx + 14, ldm.sy + 8);
+
+    // Height label (along Z, x=W, y=0)
+    //const lhm = iso(W, 0, H/2);
+    //ctx.save();
+    //ctx.fillText('1200', lhm.sx + 18, lhm.sy);
+    //ctx.restore();
+
+    // ── Dot ───────────────────────────────────────────────────────────────
+    const dp = iso(dot.x, dot.y, dot.z);
+    const r  = Math.max(5, scale * 60);
+
+    // Shadow projection on bottom face
+    const ds = iso(dot.x, dot.y, 0);
+    ctx.beginPath();
+    ctx.ellipse(ds.sx, ds.sy, r * 0.9, r * 0.35, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.12)';
+    ctx.fill();
+
+    // Dot fill — green when open, red when closed
+    const dotColor = isOpen ? '#2ecc71' : '#e74c3c';
+    const dotGlow  = isOpen ? 'rgba(46,204,113,0.3)' : 'rgba(231,76,60,0.3)';
+
+    // Glow
+    const grad = ctx.createRadialGradient(dp.sx, dp.sy, 0, dp.sx, dp.sy, r * 2.2);
+    grad.addColorStop(0, dotGlow);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.beginPath();
+    ctx.arc(dp.sx, dp.sy, r * 2.2, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Dot body
+    ctx.beginPath();
+    ctx.arc(dp.sx, dp.sy, r, 0, Math.PI * 2);
+    ctx.fillStyle = dotColor;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Highlight
+    ctx.beginPath();
+    ctx.arc(dp.sx - r * 0.3, dp.sy - r * 0.3, r * 0.3, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.fill();
+  }
+
+  // ── Update readout ────────────────────────────────────────────────────────
+  function updateReadout() {
+    document.getElementById('rx').textContent = Math.round(dot.x);
+    document.getElementById('ry').textContent = Math.round(dot.y);
+    document.getElementById('rz').textContent = Math.round(dot.z);
+  }
+
+  // ── Apply server response ─────────────────────────────────────────────────
+  function applyResponse(data) {
+    if (data.x !== undefined) dot.x = data.x;
+    if (data.y !== undefined) dot.y = data.y;
+    if (data.z !== undefined) dot.z = data.z;
+    updateReadout();
+    draw();
+  }
+
+  function setLoading(on) {
+    document.querySelectorAll('#controls-panel button').forEach(b => b.disabled = on);
+  }
+
+  // ── Call the claw API ─────────────────────────────────────────────────────
+  async function callClaw(command) {
+    setLoading(true);
+    try {
+      const res = await fetch(`http://claw/${command}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      applyResponse(data);
+
+      // Reflect open/close state if the server echoes it
+      if (command === 'open' || command === 'close') {
+        isOpen = command === 'open';
+        const badge = document.getElementById('state-badge');
+        badge.textContent = isOpen ? 'OPEN' : 'CLOSED';
+        badge.classList.toggle('closed', !isOpen);
+        draw();
+      }
+    } catch (err) {
+      console.error(`claw/${command} failed:`, err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ── Button actions ────────────────────────────────────────────────────────
+  document.getElementById('btn-up').addEventListener('click',     () => callClaw('up'));
+  document.getElementById('btn-down').addEventListener('click',   () => callClaw('down'));
+  document.getElementById('btn-left').addEventListener('click',   () => callClaw('left'));
+  document.getElementById('btn-right').addEventListener('click',  () => callClaw('right'));
+  document.getElementById('btn-higher').addEventListener('click', () => callClaw('higher'));
+  document.getElementById('btn-lower').addEventListener('click',  () => callClaw('lower'));
+  document.getElementById('btn-open').addEventListener('click',   () => callClaw('open'));
+  document.getElementById('btn-close').addEventListener('click',  () => callClaw('close'));
+  document.getElementById('btn-reset').addEventListener('click',  () => callClaw('reset'));
+
+  // ── Keyboard support ──────────────────────────────────────────────────────
+  document.addEventListener('keydown', e => {
+    switch (e.key) {
+      case 'ArrowUp':    e.preventDefault(); callClaw('up');     break;
+      case 'ArrowDown':  e.preventDefault(); callClaw('down');   break;
+      case 'ArrowLeft':  e.preventDefault(); callClaw('left');   break;
+      case 'ArrowRight': e.preventDefault(); callClaw('right');  break;
+      case 'PageUp':     e.preventDefault(); callClaw('higher'); break;
+      case 'PageDown':   e.preventDefault(); callClaw('lower');  break;
+      case 'o': case 'O': callClaw('open');  break;
+      case 'c': case 'C': callClaw('close'); break;
+    }
+  });
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  window.addEventListener('resize', resize);
+  resize();
+  updateReadout();
+
+  // ── Status polling ────────────────────────────────────────────────────────
+  setInterval(() => callClaw('status'), 5000);
+</script>
+</body>
+</html>

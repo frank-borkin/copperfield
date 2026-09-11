@@ -40,8 +40,8 @@
                 color: black;
                 font-size: 22px;
                 position: fixed;
-                top: 479px;
-                left: 200px;
+                top: 0px;
+                left: 0px;
                 margin: 0 auto;
                 width: 1200px;
             }
@@ -281,6 +281,10 @@
                     } else {
                         $('#clock').css('width', '600px')
                     }
+                    itemsTop = data.itemsTop ? data.itemsTop : '0px'
+                    $('#tickitems').css('top', itemsTop)
+                    itemsLeft = data.itemsLeft ? data.itemsLeft : '0px'
+                    $('#tickitems').css('left', itemsLeft)
                     tickItems = data.tickItems
                 })
             })
