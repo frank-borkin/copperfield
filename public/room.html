@@ -45,6 +45,10 @@
                 margin: 0 auto;
                 width: 1200px;
             }
+
+            li + li {
+                margin-top: 10px;
+            }
         </style>
     </head>
 
@@ -169,7 +173,6 @@
             // status (game running, paused, etc)
             // clue (HTML to display instead of clock)
             socket.on('status', (data) => {
-                console.log(data.status)
                 $('#clock').html(data.time)
                 if (
                     data.audioclue &&
