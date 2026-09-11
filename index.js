@@ -180,6 +180,8 @@ io.on('connection', (socket) => {
                 clueColour: instances[i].clueColour,
                 clockTop: instances[i].clockTop,
                 clockLeft: instances[i].clockLeft,
+                itemsTop: instances[i].itemsTop,
+                itemsLeft: instances[i].itemsLeft,
                 clueSound: instances[i].clueSound,
                 introVideo: instances[i].introVideo,
                 winVideo: instances[i].winVideo,
