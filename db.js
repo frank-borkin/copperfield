@@ -105,4 +105,25 @@ export function recordTickEvent({
     })
 }
 
+const avgTickTimesStmt = db.prepare(`
+    SELECT item_label AS label, AVG(time_left_seconds) AS avg_seconds
+    FROM tick_events
+    WHERE instance_id = @instanceId AND value = 1
+    GROUP BY item_label
+`)
+
+/**
+ * Average recorded time-remaining (seconds) per checklist item for an instance,
+ * over completion events (value = 1). Returns a { label: avgSeconds } map.
+ * Labels with no recorded completions are simply absent from the map.
+ */
+export function getAverageTickTimes(instanceId) {
+    var out = {}
+    var rows = avgTickTimesStmt.all({ instanceId: String(instanceId) })
+    rows.forEach(function (r) {
+        out[r.label] = r.avg_seconds
+    })
+    return out
+}
+
 export default db

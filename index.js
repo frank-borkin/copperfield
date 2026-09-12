@@ -29,6 +29,7 @@ import {
     recordGameStart,
     recordGameFinish,
     recordTickEvent,
+    getAverageTickTimes,
 } from './db.js'
 
 const require = createRequire(import.meta.url)
@@ -231,11 +232,18 @@ io.on('connection', (socket) => {
         instances.forEach(function (i) {
             socket.join('instance' + i.id)
         })
-        // And give them the game list
+        // And give them the game list, each augmented with the average
+        // recorded tick times (seconds remaining) for its instance.
+        var gamesWithAverages = games.map(function (g) {
+            var instanceId = g.instances && g.instances[0] && g.instances[0].id
+            return Object.assign({}, g, {
+                tickAverages: getAverageTickTimes(instanceId),
+            })
+        })
         callback &&
             callback({
                 status: 'ok',
-                games: games,
+                games: gamesWithAverages,
             })
     })
 

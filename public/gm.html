@@ -411,6 +411,18 @@
                         '</tr></thead><tbody></tbody></table>'
                 )
                 var tbody = table.find('tbody')
+                var tickAverages = games[game].tickAverages || {}
+                // Format an average time (seconds) as MM:SS with a zero-padded
+                // seconds field, or (TBD) when there's no recorded data.
+                function formatAvg(seconds) {
+                    if (seconds == null || isNaN(seconds)) {
+                        return '(TBD)'
+                    }
+                    var total = Math.round(seconds)
+                    var mins = Math.floor(total / 60)
+                    var secs = total % 60
+                    return '(' + mins + ':' + String(secs).padStart(2, '0') + ')'
+                }
                 $.each(games[game].tickItems, function (label) {
                     var row = $('<tr/>')
                     var shownCb = $(
@@ -437,7 +449,9 @@
                     })
                     row.append($('<td/>').append(shownCb))
                     row.append($('<td/>').append(completeCb))
-                    row.append($('<td/>').text(label))
+                    row.append(
+                        $('<td/>').text(label + ' ' + formatAvg(tickAverages[label]))
+                    )
                     tbody.append(row)
                 })
                 $('#checklist').append(table)
