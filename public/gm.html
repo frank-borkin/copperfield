@@ -407,7 +407,7 @@
                 var table = $(
                     '<table class="table table-sm">' +
                         '<thead><tr>' +
-                        '<th>Shown</th><th>Complete</th><th>Description</th>' +
+                        '<th>Shown</th><th>Complete</th><th>Description (Avg team time)</th>' +
                         '</tr></thead><tbody></tbody></table>'
                 )
                 var tbody = table.find('tbody')
@@ -423,7 +423,23 @@
                     var secs = total % 60
                     return '(' + mins + ':' + String(secs).padStart(2, '0') + ')'
                 }
-                $.each(games[game].tickItems, function (label) {
+                // Sort by completion time descending: items completed later in
+                // the game (less time remaining) first, items with no recorded
+                // data (TBD) last, keeping their original order among themselves.
+                var labels = Object.keys(games[game].tickItems)
+                labels.sort(function (a, b) {
+                    var av = tickAverages[a]
+                    var bv = tickAverages[b]
+                    var aHas = av != null && !isNaN(av)
+                    var bHas = bv != null && !isNaN(bv)
+                    if (aHas && bHas) {
+                        return av - bv // ascending time-remaining = latest first
+                    }
+                    if (aHas) return -1 // a has data, b is TBD -> a first
+                    if (bHas) return 1  // b has data, a is TBD -> b first
+                    return 0            // both TBD -> keep original order (stable)
+                })
+                $.each(labels, function (idx, label) {
                     var row = $('<tr/>')
                     var shownCb = $(
                         '<input type="checkbox" class="shown-cb">'
