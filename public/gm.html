@@ -289,9 +289,14 @@
                             $('#finish').attr('disabled', true)
                         }
                         var tickState = data.tick_items || {}
-                        $('#checklist input[type=checkbox]').each(function () {
+                        var shownState = data.shown_items || {}
+                        $('#checklist .complete-cb').each(function () {
                             var label = $(this).data('label')
                             $(this).prop('checked', !!tickState[label])
+                        })
+                        $('#checklist .shown-cb').each(function () {
+                            var label = $(this).data('label')
+                            $(this).prop('checked', !!shownState[label])
                         })
                     }
                 }
@@ -395,13 +400,34 @@
                     `url("${games[game].gmBackground}") no-repeat center center fixed`
                 )
                 $('#checklist').empty()
-                var i = 0
-                $.each(games[game].tickItems, function (label, checked) {
-                    var id = 'ti' + i
-                    $('#checklist').append(
-                        `<input type="checkbox" id="${id}" name="${id}" data-label="${label}" ${checked ? 'checked' : ''}><label for="${id}">${label}</label><br>`
-                    )
-                    $(`#${id}`).click(function () {
+                // The GM sees every item. Two independent checkboxes per row:
+                //  - "Shown"    -> room-screen visibility (emits 'showitem')
+                //  - "Complete" -> completion/strikethrough (emits 'tickitem')
+                // Both are synced from the status broadcast.
+                var table = $(
+                    '<table class="table table-sm">' +
+                        '<thead><tr>' +
+                        '<th>Shown</th><th>Complete</th><th>Description</th>' +
+                        '</tr></thead><tbody></tbody></table>'
+                )
+                var tbody = table.find('tbody')
+                $.each(games[game].tickItems, function (label) {
+                    var row = $('<tr/>')
+                    var shownCb = $(
+                        '<input type="checkbox" class="shown-cb">'
+                    ).attr('data-label', label)
+                    var completeCb = $(
+                        '<input type="checkbox" class="complete-cb">'
+                    ).attr('data-label', label)
+                    shownCb.click(function () {
+                        socket.emit('showitem', {
+                            instance: game,
+                            item: label,
+                            value: $(this).is(':checked'),
+                            gm: document.getElementById('user').innerHTML,
+                        })
+                    })
+                    completeCb.click(function () {
                         socket.emit('tickitem', {
                             instance: game,
                             item: label,
@@ -409,8 +435,12 @@
                             gm: document.getElementById('user').innerHTML,
                         })
                     })
-                    i++
+                    row.append($('<td/>').append(shownCb))
+                    row.append($('<td/>').append(completeCb))
+                    row.append($('<td/>').text(label))
+                    tbody.append(row)
                 })
+                $('#checklist').append(table)
                 localStorage.setItem('game', game)
             }
 

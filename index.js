@@ -132,7 +132,8 @@ var timeouts = Array() //To deal with multiple clues in flight
 var instances = Array()
 var num_clues = Array()
 var win_time = Array() //Seconds
-var tick_items = Array()
+var tick_items = Array() //Completion state { label: bool }. Per instance
+var shown_items = Array() //Visibility state { label: bool }. Per instance
 var run_id = Array() //DB run id for the current game run, per instance
 const games = require('./config/games.json')
 
@@ -146,13 +147,27 @@ games.forEach(function (g) {
 
 instances.forEach((i) => (i.timerStarted = false))
 
-// Build the initial checklist state for an instance as a { label: bool } map,
-// seeded with the default checked-state from the config (tickItems values).
+// Build the initial checklist *completion* state for an instance as a
+// { label: false } map. Every configured item starts uncompleted. The bool in
+// the config (instance.tickItems values) is a separate concern (room-screen
+// visibility) and does not affect completion state.
 function initialTickItems(instance) {
     var out = {}
-    var defaults = instance.tickItems || {}
-    Object.keys(defaults).forEach(function (label) {
-        out[label] = !!defaults[label]
+    var items = instance.tickItems || {}
+    Object.keys(items).forEach(function (label) {
+        out[label] = false
+    })
+    return out
+}
+
+// Build the initial *visibility* state for an instance as a { label: bool }
+// map, seeded from the config (instance.tickItems values). This controls
+// whether the room screen shows each item, and is reset on game reset.
+function initialShownItems(instance) {
+    var out = {}
+    var items = instance.tickItems || {}
+    Object.keys(items).forEach(function (label) {
+        out[label] = !!items[label]
     })
     return out
 }
@@ -254,6 +269,7 @@ io.on('connection', (socket) => {
                     state[data.instance] = 'reset'
                     log[data.instance] = ''
                     tick_items[data.instance] = initialTickItems(instances[data.instance])
+                    shown_items[data.instance] = initialShownItems(instances[data.instance])
                     logger.info('Game auto reset', {
                         gm: 'System',
                         game: games[data.instance].name,
@@ -301,6 +317,7 @@ io.on('connection', (socket) => {
                 state[data.instance] = 'reset'
                 log[data.instance] = ''
                 tick_items[data.instance] = initialTickItems(instances[data.instance])
+                shown_items[data.instance] = initialShownItems(instances[data.instance])
                 logger.info('Game reset', {
                     gm: data.gm,
                     game: games[data.instance].name,
@@ -391,6 +408,11 @@ io.on('connection', (socket) => {
         })
     })
 
+    socket.on('showitem', (data) => {
+        // data.item is the checklist item label. Toggles room-screen visibility.
+        shown_items[data.instance][data.item] = data.value
+    })
+
     function sendStatus(instance) {
         var timeLeft = getTimeLeft(instance)
         // Socket name is instance0, instance1, etc
@@ -408,7 +430,8 @@ io.on('connection', (socket) => {
             audioclue: audioclues[instance],
             state: state[instance],
             log: log[instance],
-            tick_items: tick_items[instance]
+            tick_items: tick_items[instance],
+            shown_items: shown_items[instance]
         })
     }
 
@@ -426,6 +449,7 @@ io.on('connection', (socket) => {
             win_time[j] = 0
             run_id[j] = null
             tick_items[j] = initialTickItems(instances[j])
+            shown_items[j] = initialShownItems(instances[j])
             setInterval(sendStatus, 1000, instances[j].id)
         }
     }

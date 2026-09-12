@@ -30,7 +30,7 @@ db.exec(`
 
     CREATE TABLE IF NOT EXISTS tick_events (
         id                INTEGER PRIMARY KEY AUTOINCREMENT,
-        run_id            INTEGER NOT NULL,
+        run_id            INTEGER,
         instance_id       TEXT    NOT NULL,
         item_label        TEXT    NOT NULL,
         value             INTEGER NOT NULL,

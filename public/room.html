@@ -211,7 +211,13 @@
                     $('#tickitems').empty()
                     var list = $('<ul/>').appendTo('#tickitems');
                     var tickState = data.tick_items || {};
+                    var shownState = data.shown_items || {};
+                    // shownState[label] (runtime, GM-toggled) controls visibility.
+                    // tickState[label] (runtime) controls completion.
                     Object.keys(tickItems).forEach(function (label) {
+                        if (!shownState[label]) {
+                            return; // Hidden from the room screen.
+                        }
                         if (tickState[label]) {
                             list.append(`<li>☑ <s>${label}</s></li>`);
                         } else {
