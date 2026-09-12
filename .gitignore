@@ -102,3 +102,8 @@ dist
 
 # TernJS port file
 .tern-port
+
+# SQLite database (runtime data)
+config/copperfield.db
+config/copperfield.db-shm
+config/copperfield.db-wal

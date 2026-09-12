@@ -25,6 +25,11 @@ import * as date from 'date-and-time'
 import express from 'express'
 import padStart from 'string.prototype.padstart'
 import path from 'path'
+import {
+    recordGameStart,
+    recordGameFinish,
+    recordTickEvent,
+} from './db.js'
 
 const require = createRequire(import.meta.url)
 const __filename = fileURLToPath(import.meta.url)
@@ -128,6 +133,7 @@ var instances = Array()
 var num_clues = Array()
 var win_time = Array() //Seconds
 var tick_items = Array()
+var run_id = Array() //DB run id for the current game run, per instance
 const games = require('./config/games.json')
 
 // Populate the instances array with the game instances we have on this site. The ID's may not be sequential.
@@ -147,6 +153,9 @@ function getTimeLeft(instance) {
         timeLeft = date.subtract(now, timers[instance]).toSeconds().value
         if (timeLeft <= 0) {
             state[instance] = 'fail'
+            // Record the loss once, at the moment the timer runs out.
+            recordGameFinish({ runId: run_id[instance], outcome: 'fail' })
+            run_id[instance] = null
         }
     } else if (state[instance] == 'win' || state[instance] == 'post') {
         timeLeft = win_time[instance]
@@ -249,6 +258,10 @@ io.on('connection', (socket) => {
                 new Date(),
                 instances[data.instance].gameLength
             )
+            run_id[data.instance] = recordGameStart({
+                instanceId: instances[data.instance].id,
+                gameName: games[data.instance].name,
+            })
             logger.info('Game started', {
                 gm: data.gm,
                 game: games[data.instance].name,
@@ -260,6 +273,8 @@ io.on('connection', (socket) => {
             win_time[data.instance] = date
                 .subtract(now, timers[data.instance])
                 .toSeconds().value
+            recordGameFinish({ runId: run_id[data.instance], outcome: 'win' })
+            run_id[data.instance] = null
             logger.info('Team Won', {
                 gm: data.gm,
                 game: games[data.instance].name,
@@ -353,7 +368,16 @@ io.on('connection', (socket) => {
     })
 
     socket.on('tickitem', (data) => {
-        tick_items[data.instance][data.item] = data.value;
+        tick_items[data.instance][data.item] = data.value
+        var timeLeft = getTimeLeft(data.instance)
+        recordTickEvent({
+            runId: run_id[data.instance],
+            instanceId: instances[data.instance].id,
+            itemIndex: data.item,
+            itemLabel: instances[data.instance].tickItems?.[data.item],
+            value: data.value,
+            timeLeftSeconds: timeLeft,
+        })
     })
 
     function sendStatus(instance) {
@@ -389,6 +413,7 @@ io.on('connection', (socket) => {
             audioclues[j] = ''
             num_clues[j] = 0
             win_time[j] = 0
+            run_id[j] = null
             tick_items[j] = Array(instances[j].tickItems?.length).fill(false);
             setInterval(sendStatus, 1000, instances[j].id)
         }

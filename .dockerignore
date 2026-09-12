@@ -1,2 +1,5 @@
 node_modules
 npm-debug.log
+config/copperfield.db
+config/copperfield.db-shm
+config/copperfield.db-wal
