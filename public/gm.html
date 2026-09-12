@@ -288,9 +288,11 @@
                             $('#reset').attr('disabled', false)
                             $('#finish').attr('disabled', true)
                         }
-                        for (var j = 0; j < data.tick_items.length; j++) {
-                            $(`#ti${j}`).prop( "checked", data.tick_items[j] );
-                        }   
+                        var tickState = data.tick_items || {}
+                        $('#checklist input[type=checkbox]').each(function () {
+                            var label = $(this).data('label')
+                            $(this).prop('checked', !!tickState[label])
+                        })
                     }
                 }
             })
@@ -393,18 +395,21 @@
                     `url("${games[game].gmBackground}") no-repeat center center fixed`
                 )
                 $('#checklist').empty()
-                $.each(games[game].tickItems, function (i, t) {
+                var i = 0
+                $.each(games[game].tickItems, function (label, checked) {
+                    var id = 'ti' + i
                     $('#checklist').append(
-                        `<input type="checkbox" id="ti${i}" name="ti${i}" value="${t}"><label for="ti${i}">${t}</label><br>`
+                        `<input type="checkbox" id="${id}" name="${id}" data-label="${label}" ${checked ? 'checked' : ''}><label for="${id}">${label}</label><br>`
                     )
-                    $(`#ti${i}`).click(function () {
+                    $(`#${id}`).click(function () {
                         socket.emit('tickitem', {
                             instance: game,
-                            item: i,
-                            value: $(`#ti${i}`).is(":checked"),
+                            item: label,
+                            value: $(this).is(':checked'),
                             gm: document.getElementById('user').innerHTML,
                         })
                     })
+                    i++
                 })
                 localStorage.setItem('game', game)
             }

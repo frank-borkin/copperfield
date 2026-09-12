@@ -139,12 +139,23 @@ const games = require('./config/games.json')
 // Populate the instances array with the game instances we have on this site. The ID's may not be sequential.
 games.forEach(function (g) {
     g.instances.forEach(function (i) {
-        i.tickItems = g.tickItems || []
+        i.tickItems = g.tickItems || {}
         instances.push(i)
     })
 })
 
 instances.forEach((i) => (i.timerStarted = false))
+
+// Build the initial checklist state for an instance as a { label: bool } map,
+// seeded with the default checked-state from the config (tickItems values).
+function initialTickItems(instance) {
+    var out = {}
+    var defaults = instance.tickItems || {}
+    Object.keys(defaults).forEach(function (label) {
+        out[label] = !!defaults[label]
+    })
+    return out
+}
 
 function getTimeLeft(instance) {
     var timeLeft = instances[instance].gameLength //Default
@@ -242,7 +253,7 @@ io.on('connection', (socket) => {
                 setTimeout(() => {
                     state[data.instance] = 'reset'
                     log[data.instance] = ''
-                    tick_items[data.instance] = Array(instances[data.instance].tickItems?.length).fill(false);
+                    tick_items[data.instance] = initialTickItems(instances[data.instance])
                     logger.info('Game auto reset', {
                         gm: 'System',
                         game: games[data.instance].name,
@@ -289,7 +300,7 @@ io.on('connection', (socket) => {
             if (state[data.instance] != 'running') {
                 state[data.instance] = 'reset'
                 log[data.instance] = ''
-                tick_items[data.instance] = Array(instances[data.instance].tickItems?.length).fill(false);
+                tick_items[data.instance] = initialTickItems(instances[data.instance])
                 logger.info('Game reset', {
                     gm: data.gm,
                     game: games[data.instance].name,
@@ -368,13 +379,13 @@ io.on('connection', (socket) => {
     })
 
     socket.on('tickitem', (data) => {
+        // data.item is the checklist item label (key into the tickItems map).
         tick_items[data.instance][data.item] = data.value
         var timeLeft = getTimeLeft(data.instance)
         recordTickEvent({
             runId: run_id[data.instance],
             instanceId: instances[data.instance].id,
-            itemIndex: data.item,
-            itemLabel: instances[data.instance].tickItems?.[data.item],
+            itemLabel: data.item,
             value: data.value,
             timeLeftSeconds: timeLeft,
         })
@@ -414,7 +425,7 @@ io.on('connection', (socket) => {
             num_clues[j] = 0
             win_time[j] = 0
             run_id[j] = null
-            tick_items[j] = Array(instances[j].tickItems?.length).fill(false);
+            tick_items[j] = initialTickItems(instances[j])
             setInterval(sendStatus, 1000, instances[j].id)
         }
     }

@@ -76,7 +76,7 @@
             var winTime
             var clueColour = 'white'
             var audio
-            var tickItems = []
+            var tickItems = {}
 
             function playSound(url) {
                 if (soundPlaying == false) {
@@ -210,13 +210,14 @@
                 } else {
                     $('#tickitems').empty()
                     var list = $('<ul/>').appendTo('#tickitems');
-                    for (var i = 0; i < tickItems.length; i++) {
-                        if (data.tick_items[i]) {
-                            list.append(`<li>☑ <s>${tickItems[i]}</s></li>`);
+                    var tickState = data.tick_items || {};
+                    Object.keys(tickItems).forEach(function (label) {
+                        if (tickState[label]) {
+                            list.append(`<li>☑ <s>${label}</s></li>`);
                         } else {
-                            list.append(`<li>☐ ${tickItems[i]}</li>`);
+                            list.append(`<li>☐ ${label}</li>`);
                         }
-                    }          
+                    });
                 }
                 if (data.state == 'post') {
                     $('#clock').html(winTime)
@@ -288,7 +289,7 @@
                     $('#tickitems').css('top', itemsTop)
                     itemsLeft = data.itemsLeft ? data.itemsLeft : '0px'
                     $('#tickitems').css('left', itemsLeft)
-                    tickItems = data.tickItems
+                    tickItems = data.tickItems || {}
                 })
             })
         </script>

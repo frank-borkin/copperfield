@@ -32,8 +32,7 @@ db.exec(`
         id                INTEGER PRIMARY KEY AUTOINCREMENT,
         run_id            INTEGER NOT NULL,
         instance_id       TEXT    NOT NULL,
-        item_index        INTEGER NOT NULL,
-        item_label        TEXT,
+        item_label        TEXT    NOT NULL,
         value             INTEGER NOT NULL,
         time_left_seconds REAL    NOT NULL,
         event_time        TEXT    NOT NULL,
@@ -56,9 +55,9 @@ const finishGameStmt = db.prepare(`
 
 const insertTickStmt = db.prepare(`
     INSERT INTO tick_events
-        (run_id, instance_id, item_index, item_label, value, time_left_seconds, event_time)
+        (run_id, instance_id, item_label, value, time_left_seconds, event_time)
     VALUES
-        (@runId, @instanceId, @itemIndex, @itemLabel, @value, @timeLeftSeconds, @eventTime)
+        (@runId, @instanceId, @itemLabel, @value, @timeLeftSeconds, @eventTime)
 `)
 
 /**
@@ -91,7 +90,6 @@ export function recordGameFinish({ runId, outcome, finishTime = new Date() }) {
 export function recordTickEvent({
     runId,
     instanceId,
-    itemIndex,
     itemLabel,
     value,
     timeLeftSeconds,
@@ -100,8 +98,7 @@ export function recordTickEvent({
     insertTickStmt.run({
         runId: runId ?? null,
         instanceId: String(instanceId),
-        itemIndex,
-        itemLabel: itemLabel ?? null,
+        itemLabel: String(itemLabel),
         value: value ? 1 : 0,
         timeLeftSeconds,
         eventTime: new Date(eventTime).toISOString(),
