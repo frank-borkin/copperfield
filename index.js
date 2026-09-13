@@ -134,6 +134,7 @@ var instances = Array()
 var num_clues = Array()
 var win_time = Array() //Seconds
 var tick_items = Array() //Completion state { label: bool }. Per instance
+var tick_times = Array() //Time remaining (s) at last tick { label: number|null }. Per instance
 var shown_items = Array() //Visibility state { label: bool }. Per instance
 var run_id = Array() //DB run id for the current game run, per instance
 const games = require('./config/games.json')
@@ -157,6 +158,18 @@ function initialTickItems(instance) {
     var items = instance.tickItems || {}
     Object.keys(items).forEach(function (label) {
         out[label] = false
+    })
+    return out
+}
+
+// Build the initial per-item last-tick time state as a { label: null } map.
+// Each entry holds the time remaining (seconds) when the item was last ticked
+// (value = 1) in the current game, or null if not (yet) ticked.
+function initialTickTimes(instance) {
+    var out = {}
+    var items = instance.tickItems || {}
+    Object.keys(items).forEach(function (label) {
+        out[label] = null
     })
     return out
 }
@@ -277,6 +290,7 @@ io.on('connection', (socket) => {
                     state[data.instance] = 'reset'
                     log[data.instance] = ''
                     tick_items[data.instance] = initialTickItems(instances[data.instance])
+                    tick_times[data.instance] = initialTickTimes(instances[data.instance])
                     shown_items[data.instance] = initialShownItems(instances[data.instance])
                     logger.info('Game auto reset', {
                         gm: 'System',
@@ -325,6 +339,7 @@ io.on('connection', (socket) => {
                 state[data.instance] = 'reset'
                 log[data.instance] = ''
                 tick_items[data.instance] = initialTickItems(instances[data.instance])
+                tick_times[data.instance] = initialTickTimes(instances[data.instance])
                 shown_items[data.instance] = initialShownItems(instances[data.instance])
                 logger.info('Game reset', {
                     gm: data.gm,
@@ -407,6 +422,13 @@ io.on('connection', (socket) => {
         // data.item is the checklist item label (key into the tickItems map).
         tick_items[data.instance][data.item] = data.value
         var timeLeft = getTimeLeft(data.instance)
+        // Track the time remaining at the last tick (value = 1); clear on untick
+        // so a re-tick overwrites with the latest time.
+        if (data.value) {
+            tick_times[data.instance][data.item] = timeLeft
+        } else {
+            tick_times[data.instance][data.item] = null
+        }
         recordTickEvent({
             runId: run_id[data.instance],
             instanceId: instances[data.instance].id,
@@ -439,6 +461,7 @@ io.on('connection', (socket) => {
             state: state[instance],
             log: log[instance],
             tick_items: tick_items[instance],
+            tick_times: tick_times[instance],
             shown_items: shown_items[instance]
         })
     }
@@ -457,6 +480,7 @@ io.on('connection', (socket) => {
             win_time[j] = 0
             run_id[j] = null
             tick_items[j] = initialTickItems(instances[j])
+            tick_times[j] = initialTickTimes(instances[j])
             shown_items[j] = initialShownItems(instances[j])
             setInterval(sendStatus, 1000, instances[j].id)
         }

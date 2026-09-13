@@ -84,6 +84,14 @@
             span[disabled] {
                 pointer-events: none;
             }
+            /* Checklist "behind pace" warnings: orange (>5 min), red (>10 min). */
+            tr.behind-warning > td {
+                background-color: orange !important;
+            }
+            tr.behind-danger > td {
+                background-color: red !important;
+                color: white;
+            }
         </style>
     </head>
 
@@ -216,6 +224,17 @@
             const socket = io({
                 transports: ['websocket'],
             })
+            // Format a time in seconds as M:SS (zero-padded seconds), or a
+            // placeholder (default '(TBD)') when there's no value.
+            function formatTime(seconds, placeholder) {
+                if (seconds == null || isNaN(seconds)) {
+                    return placeholder == null ? '(TBD)' : placeholder
+                }
+                var total = Math.round(seconds)
+                var mins = Math.floor(total / 60)
+                var secs = total % 60
+                return mins + ':' + String(secs).padStart(2, '0')
+            }
             var games = [
                 {
                     nodes: 0,
@@ -290,6 +309,8 @@
                         }
                         var tickState = data.tick_items || {}
                         var shownState = data.shown_items || {}
+                        var tickTimes = data.tick_times || {}
+                        var averages = games[game].tickAverages || {}
                         $('#checklist .complete-cb').each(function () {
                             var label = $(this).data('label')
                             $(this).prop('checked', !!tickState[label])
@@ -297,6 +318,38 @@
                         $('#checklist .shown-cb').each(function () {
                             var label = $(this).data('label')
                             $(this).prop('checked', !!shownState[label])
+                        })
+                        // "This team": time remaining when this item was last
+                        // ticked in the current game (blank until ticked).
+                        $('#checklist .team-time').each(function () {
+                            var label = $(this).data('label')
+                            var t = tickTimes[label]
+                            $(this).text(t == null ? '' : formatTime(t))
+                        })
+                        // Row colouring: warn when the team is behind the
+                        // average pace for an item they haven't ticked yet.
+                        // Times are time remaining, so being "later" than the
+                        // average means less time left (avg - now is positive).
+                        $('#checklist tbody tr').each(function () {
+                                var row = $(this)
+                                var label = row.attr('data-label')
+                                if (label == null) return
+                                row.removeClass('behind-warning behind-danger')
+                                var avg = averages[label]
+                                if (
+                                    data.state != 'running' ||
+                                    tickState[label] ||
+                                    avg == null ||
+                                    isNaN(avg)
+                                ) {
+                                    return
+                                }
+                                var deficit = avg - data.secondsLeft
+                                if (deficit > 600) {
+                                    row.addClass('behind-danger')
+                                } else if (deficit > 300) {
+                                    row.addClass('behind-warning')
+                                }
                         })
                     }
                 }
@@ -407,25 +460,19 @@
                 var table = $(
                     '<table class="table table-sm">' +
                         '<thead><tr>' +
-                        '<th>Shown</th><th>Complete</th><th>Description (Avg team time)</th>' +
+                        '<th>Shown</th><th>Complete</th><th>Description (Avg team time)</th><th>This team</th>' +
                         '</tr></thead><tbody></tbody></table>'
                 )
                 var tbody = table.find('tbody')
                 var tickAverages = games[game].tickAverages || {}
-                // Format an average time (seconds) as MM:SS with a zero-padded
-                // seconds field, or (TBD) when there's no recorded data.
+                // Average recorded time (seconds remaining) formatted as
+                // (M:SS) or (TBD) when there's no recorded data.
                 function formatAvg(seconds) {
-                    if (seconds == null || isNaN(seconds)) {
-                        return '(TBD)'
-                    }
-                    var total = Math.round(seconds)
-                    var mins = Math.floor(total / 60)
-                    var secs = total % 60
-                    return '(' + mins + ':' + String(secs).padStart(2, '0') + ')'
+                    return '(' + formatTime(seconds, 'TBD') + ')'
                 }
-                // Sort by completion time descending: items completed later in
-                // the game (less time remaining) first, items with no recorded
-                // data (TBD) last, keeping their original order among themselves.
+                // Sort by average team time descending (largest average time
+                // remaining first), items with no recorded data (TBD) last,
+                // keeping their original order among themselves.
                 var labels = Object.keys(games[game].tickItems)
                 labels.sort(function (a, b) {
                     var av = tickAverages[a]
@@ -433,16 +480,16 @@
                     var aHas = av != null && !isNaN(av)
                     var bHas = bv != null && !isNaN(bv)
                     if (aHas && bHas) {
-                        return av - bv // ascending time-remaining = latest first
+                        return bv - av // descending average time remaining
                     }
                     if (aHas) return -1 // a has data, b is TBD -> a first
                     if (bHas) return 1  // b has data, a is TBD -> b first
                     return 0            // both TBD -> keep original order (stable)
                 })
                 $.each(labels, function (idx, label) {
-                    var row = $('<tr/>')
+                    var row = $('<tr/>').attr('data-label', label)
                     var shownCb = $(
-                        '<input type="checkbox" class="shown-cb">'
+                        '<input type="checkbox" class="shown-cb" disabled>'
                     ).attr('data-label', label)
                     var completeCb = $(
                         '<input type="checkbox" class="complete-cb">'
@@ -468,9 +515,29 @@
                     row.append(
                         $('<td/>').text(label + ' ' + formatAvg(tickAverages[label]))
                     )
+                    // "This team" cell, filled live from the status broadcast.
+                    row.append(
+                        $('<td class="team-time"/>').attr('data-label', label)
+                    )
                     tbody.append(row)
                 })
                 $('#checklist').append(table)
+                // Safety: the "Shown" checkboxes are disabled by default so
+                // visibility can't be changed accidentally. This toggle
+                // enables/disables them.
+                var changeShown = $(
+                    '<input type="checkbox" id="change-shown">'
+                )
+                var changeShownLabel = $(
+                    '<label for="change-shown"> Change shown</label>'
+                )
+                changeShown.change(function () {
+                    var enabled = $(this).is(':checked')
+                    $('#checklist .shown-cb').prop('disabled', !enabled)
+                })
+                $('#checklist').append(
+                    $('<div class="mt-2"/>').append(changeShown, changeShownLabel)
+                )
                 localStorage.setItem('game', game)
             }
 
