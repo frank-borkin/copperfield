@@ -311,9 +311,13 @@
                         var shownState = data.shown_items || {}
                         var tickTimes = data.tick_times || {}
                         var averages = games[game].tickAverages || {}
+                        // Complete checkboxes are only interactive while the
+                        // game is running; otherwise they are disabled.
+                        var tickEnabled = data.state == 'running'
                         $('#checklist .complete-cb').each(function () {
                             var label = $(this).data('label')
                             $(this).prop('checked', !!tickState[label])
+                            $(this).prop('disabled', !tickEnabled)
                         })
                         $('#checklist .shown-cb').each(function () {
                             var label = $(this).data('label')
@@ -492,7 +496,7 @@
                         '<input type="checkbox" class="shown-cb" disabled>'
                     ).attr('data-label', label)
                     var completeCb = $(
-                        '<input type="checkbox" class="complete-cb">'
+                        '<input type="checkbox" class="complete-cb" disabled>'
                     ).attr('data-label', label)
                     shownCb.click(function () {
                         socket.emit('showitem', {
