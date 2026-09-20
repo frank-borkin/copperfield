@@ -35,6 +35,34 @@
             #main {
                 margin: 50px;
             }
+            /* Tick-item dots sit in a track directly below each progress bar.
+               Positioned as a percentage across the same width the bar uses. */
+            .tick-track {
+                position: relative;
+                height: 16px;
+                margin-top: 4px;
+            }
+            .tick-dot {
+                position: absolute;
+                top: 0;
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                transform: translateX(-50%);
+                border: 1px solid rgba(0, 0, 0, 0.35);
+            }
+            .tick-dot.green {
+                background-color: #28a745;
+            }
+            .tick-dot.orange {
+                background-color: #fd7e14;
+            }
+            .tick-dot.red {
+                background-color: #dc3545;
+            }
+            .tick-dot.grey {
+                background-color: #adb5bd;
+            }
         </style>
     </head>
 
@@ -70,9 +98,11 @@
                                 game +
                                 '" style="display: flex"><div class="col" id="plabel' +
                                 game +
-                                '"></div><div class="progress col-10"><div id="progress' +
+                                '"></div><div class="col-10" style="padding: 0"><div class="progress"><div id="progress' +
                                 game +
-                                '" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="3600"></div></div></div>'
+                                '" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="3600"></div></div><div class="tick-track" id="ticks' +
+                                game +
+                                '"></div></div></div>'
                         )
                     }
                 })
@@ -100,9 +130,71 @@
                                 'green'
                             )
                         }
+                        renderTicks(game, data)
                     }
                 }
             })
+
+            // Position (percent across the bar) for a given "seconds remaining"
+            // value, matching the progress-bar width formula: full room = 3600s.
+            function seconds_to_percent(seconds) {
+                var pc = (3600 - seconds) / 36
+                if (pc < 0) pc = 0
+                if (pc > 100) pc = 100
+                return pc
+            }
+
+            // Draw a dot per tick item below the progress bar:
+            //  - ticked: placed at the time it was ticked, coloured by how late
+            //    it was vs the item's average (times are seconds remaining, so
+            //    "late" means fewer seconds left than the average).
+            //      green  = within 5 min of average
+            //      orange = more than 5 min late
+            //      red    = more than 10 min late
+            //  - unticked with an average: grey dot at the average position
+            //  - unticked without an average: no dot
+            function renderTicks(game, data) {
+                var track = $('#ticks' + game)
+                track.empty()
+                var tickState = data.tick_items || {}
+                var tickTimes = data.tick_times || {}
+                var averages = games[game].tickAverages || {}
+                var labels = Object.keys(games[game].tickItems || {})
+                $.each(labels, function (idx, label) {
+                    var avg = averages[label]
+                    var hasAvg = avg != null && !isNaN(avg)
+                    var ticked = !!tickState[label]
+                    var pos, cls
+                    if (ticked) {
+                        var t = tickTimes[label]
+                        if (t == null || isNaN(t)) return
+                        pos = seconds_to_percent(t)
+                        if (hasAvg) {
+                            // late = seconds remaining below the average
+                            var late = avg - t
+                            if (late > 600) {
+                                cls = 'red'
+                            } else if (late > 300) {
+                                cls = 'orange'
+                            } else {
+                                cls = 'green'
+                            }
+                        } else {
+                            // No average to compare against: treat as on time.
+                            cls = 'green'
+                        }
+                    } else {
+                        if (!hasAvg) return
+                        pos = seconds_to_percent(avg)
+                        cls = 'grey'
+                    }
+                    $('<div/>')
+                        .addClass('tick-dot ' + cls)
+                        .attr('title', label)
+                        .css('left', pos + '%')
+                        .appendTo(track)
+                })
+            }
         </script>
         <script
             type="module"
