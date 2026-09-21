@@ -445,9 +445,15 @@ io.on('connection', (socket) => {
 
     function sendStatus(instance) {
         var timeLeft = getTimeLeft(instance)
-        // Socket name is instance0, instance1, etc
-        socket.to('instance' + instance).emit('status', {
-            instance: instance,
+        // `instance` is the ARRAY INDEX into the per-instance state arrays.
+        // The socket.io room name is keyed by the (possibly non-sequential)
+        // configured instance id, so translate index -> id for the room name
+        // while keeping the array index for all state lookups. Conflating the
+        // two caused clues for one instance to be broadcast to another
+        // instance's room (e.g. a clue for id 5 playing on id 0).
+        var instanceId = instances[instance].id
+        socket.to('instance' + instanceId).emit('status', {
+            instance: instanceId,
             // We build the clock on our side as a string
             time:
                 padStart(Math.floor(timeLeft / 3600), 2, '0') +
@@ -482,7 +488,9 @@ io.on('connection', (socket) => {
             tick_items[j] = initialTickItems(instances[j])
             tick_times[j] = initialTickTimes(instances[j])
             shown_items[j] = initialShownItems(instances[j])
-            setInterval(sendStatus, 1000, instances[j].id)
+            // Pass the ARRAY INDEX; sendStatus translates it to the instance
+            // id for the room name.
+            setInterval(sendStatus, 1000, j)
         }
     }
 })
