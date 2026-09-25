@@ -109,6 +109,48 @@
                 }
             }
 
+            // Attempt to load a subtitles file that lives alongside the video
+            // (same path/name, .mp4 swapped for .vtt). If the server has no
+            // such file (404) we silently skip it. Controls stay hidden; the
+            // track is enabled programmatically once it loads.
+            function loadSubtitles(videoEl, url) {
+                // Remove any track left over from a previous video.
+                videoEl
+                    .querySelectorAll('track')
+                    .forEach((t) => t.remove())
+
+                if (!url) {
+                    return
+                }
+                const vttUrl = url.replace(/\.mp4(\?.*)?$/i, '.vtt$1')
+                if (vttUrl === url) {
+                    return
+                }
+
+                fetch(vttUrl, { method: 'GET' })
+                    .then((res) => {
+                        if (!res.ok) {
+                            // 404 or any other error: do nothing.
+                            return
+                        }
+                        const track = document.createElement('track')
+                        track.kind = 'subtitles'
+                        track.label = 'Subtitles'
+                        track.src = vttUrl
+                        track.default = true
+                        videoEl.appendChild(track)
+                        // Enable the track once the browser has parsed it.
+                        track.addEventListener('load', () => {
+                            if (track.track) {
+                                track.track.mode = 'showing'
+                            }
+                        })
+                    })
+                    .catch((err) => {
+                        console.warn('Subtitle fetch failed', err)
+                    })
+            }
+
             // Load the video source, then start playback once the browser has
             // buffered enough. Relying on play() alone right after setting src
             // races the load and can silently fail on a fresh (uncached) file.
@@ -117,6 +159,7 @@
                 videoEl.preload = 'auto'
                 videoEl.src = url
                 videoEl.load()
+                loadSubtitles(videoEl, url)
                 const startPlayback = () => {
                     const p = videoEl.play()
                     if (p !== undefined) {
