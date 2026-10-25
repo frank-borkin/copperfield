@@ -64,6 +64,20 @@
         <script src="jquery-3.7.1.slim.min.js"></script>
         <script src="/socket.io/socket.io.js"></script>
         <script>
+            // Register the media service worker. It precaches everything under
+            // /media so intro/outro videos, background music and clue sounds
+            // play reliably even on a flaky network. Generated at container
+            // start, so the scope is the site root.
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function () {
+                    navigator.serviceWorker
+                        .register('/sw.js')
+                        .catch(function (err) {
+                            console.warn('Service worker registration failed', err)
+                        })
+                })
+            }
+
             const socket = io({
                 transports: ['websocket'],
             })
@@ -85,11 +99,12 @@
                 if (soundPlaying == false) {
                     //By default, the sound will play over and over for each status msg
                     soundPlaying = true
+                    // Release the blob from the previous sound, if any.
+                    if (audio && audio.dataset && audio.dataset.blobUrl) {
+                        URL.revokeObjectURL(audio.dataset.blobUrl)
+                    }
                     audio = new Audio()
-                    // Preload so the file (network or cache) is fetched before we try to play.
                     audio.preload = 'auto'
-                    audio.src = url
-                    audio.load()
                     // play() resolves once playback actually starts and rejects if the
                     // browser blocks it or the file failed to load. This avoids relying
                     // on canplaythrough, which may never fire for an already-cached file.
@@ -101,14 +116,37 @@
                             })
                         }
                     }
-                    if (audio.readyState >= 3) {
-                        // HAVE_FUTURE_DATA or better: enough is buffered, play now.
-                        startPlayback()
-                    } else {
-                        audio.addEventListener('canplaythrough', startPlayback, {
-                            once: true,
-                        })
+                    const begin = () => {
+                        if (audio.readyState >= 3) {
+                            // HAVE_FUTURE_DATA or better: enough is buffered.
+                            startPlayback()
+                        } else {
+                            audio.addEventListener(
+                                'canplaythrough',
+                                startPlayback,
+                                { once: true }
+                            )
+                        }
                     }
+                    // Play from a blob so the file is read whole from the
+                    // service worker cache, with no range requests. Fall back to
+                    // the direct URL if the blob fetch fails.
+                    fetchBlobUrl(url)
+                        .then((blobUrl) => {
+                            audio.dataset.blobUrl = blobUrl
+                            audio.src = blobUrl
+                            audio.load()
+                            begin()
+                        })
+                        .catch((err) => {
+                            console.warn(
+                                'Audio blob load failed, using direct src',
+                                err
+                            )
+                            audio.src = url
+                            audio.load()
+                            begin()
+                        })
                 }
             }
 
@@ -154,15 +192,44 @@
                     })
             }
 
-            // Load the video source, then start playback once the browser has
-            // buffered enough. Relying on play() alone right after setting src
-            // races the load and can silently fail on a fresh (uncached) file.
+            // Fetch a media URL as a Blob and return a blob: object URL for it.
+            // Playing a <video>/<audio> from a blob: URL means the element has
+            // the whole file in memory, so it never issues HTTP range requests.
+            // That is the only reliable way to play *from the service worker
+            // cache*: range requests (Range: bytes=...) do not match the full
+            // 200 response we precached, so they would bypass the cache and hit
+            // the network. A plain fetch() is a normal GET with no Range header,
+            // which the service worker serves whole from the cache.
+            function fetchBlobUrl(url) {
+                return fetch(url)
+                    .then((res) => {
+                        if (!res.ok) {
+                            throw new Error('Fetch failed: ' + res.status)
+                        }
+                        return res.blob()
+                    })
+                    .then((blob) => URL.createObjectURL(blob))
+            }
+
+            // Revoke a previously created blob: URL so its memory is released.
+            // The room screen cycles through many large videos over a shift, so
+            // leaking these would steadily grow memory use.
+            function revokeBlobUrl(videoEl) {
+                if (videoEl.dataset.blobUrl) {
+                    URL.revokeObjectURL(videoEl.dataset.blobUrl)
+                    delete videoEl.dataset.blobUrl
+                }
+            }
+
+            // Load the video via a blob (so it plays from cache without range
+            // requests), then start playback once enough is buffered. If the
+            // blob fetch fails for any reason we fall back to setting the URL
+            // directly so a game is never left without its video.
             function playVideo(videoEl, url, endedHandler) {
                 videoEl.addEventListener('ended', endedHandler)
                 videoEl.preload = 'auto'
-                videoEl.src = url
-                videoEl.load()
                 loadSubtitles(videoEl, url)
+
                 const startPlayback = () => {
                     const p = videoEl.play()
                     if (p !== undefined) {
@@ -171,14 +238,31 @@
                         })
                     }
                 }
-                if (videoEl.readyState >= 3) {
-                    // HAVE_FUTURE_DATA or better: enough is buffered, play now.
-                    startPlayback()
-                } else {
-                    videoEl.addEventListener('canplay', startPlayback, {
-                        once: true,
-                    })
+                const begin = () => {
+                    if (videoEl.readyState >= 3) {
+                        // HAVE_FUTURE_DATA or better: enough is buffered, play.
+                        startPlayback()
+                    } else {
+                        videoEl.addEventListener('canplay', startPlayback, {
+                            once: true,
+                        })
+                    }
                 }
+
+                revokeBlobUrl(videoEl)
+                fetchBlobUrl(url)
+                    .then((blobUrl) => {
+                        videoEl.dataset.blobUrl = blobUrl
+                        videoEl.src = blobUrl
+                        videoEl.load()
+                        begin()
+                    })
+                    .catch((err) => {
+                        console.warn('Blob load failed, using direct src', err)
+                        videoEl.src = url
+                        videoEl.load()
+                        begin()
+                    })
             }
 
             function introVidEnded(event) {
@@ -204,6 +288,7 @@
                 audio.removeAttribute('src')
                 audio.load()
                 v = document.getElementById('introVideo')
+                revokeBlobUrl(v)
                 v.src = ''
                 v.removeAttribute('src')
                 v.load()
@@ -309,11 +394,27 @@
                 socket.emit('register', instance, (data) => {
                     console.log(data.status)
                     if (data.bgType == 'video') {
-                        $('#bgVideo').append(
-                            "<source src='" +
-                                data.bgPath +
-                                "' type='video/mp4'>"
-                        )
+                        // Load the looping background video from a blob so it
+                        // plays from the service worker cache without range
+                        // requests. Fall back to a <source> on failure.
+                        const bg = document.getElementById('bgVideo')
+                        fetchBlobUrl(data.bgPath)
+                            .then((blobUrl) => {
+                                bg.dataset.blobUrl = blobUrl
+                                bg.src = blobUrl
+                                bg.load()
+                            })
+                            .catch((err) => {
+                                console.warn(
+                                    'Background video blob load failed, using source',
+                                    err
+                                )
+                                $('#bgVideo').append(
+                                    "<source src='" +
+                                        data.bgPath +
+                                        "' type='video/mp4'>"
+                                )
+                            })
                     } else {
                         $('body').css(
                             'background-image',

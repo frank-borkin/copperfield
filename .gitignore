@@ -107,3 +107,6 @@ dist
 config/copperfield.db
 config/copperfield.db-shm
 config/copperfield.db-wal
+
+# Service worker generated at container start by generate-sw.js
+public/sw.js

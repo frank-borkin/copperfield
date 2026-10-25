@@ -31,6 +31,7 @@ import {
     recordTickEvent,
     getAverageTickTimes,
 } from './db.js'
+import { generateServiceWorker } from './generate-sw.js'
 
 const require = createRequire(import.meta.url)
 const __filename = fileURLToPath(import.meta.url)
@@ -117,6 +118,18 @@ app.use((req, res, next) => {
 // Everything else (HTML, CSS, JS, images) uses Express defaults so edits are
 // picked up normally.
 app.use(express.static(join(__dirname, 'public')))
+// Generate the media service worker now, at runtime, so it precaches whatever
+// media files are present in this container. Failure here must not stop the
+// server from starting.
+try {
+    const swResult = generateServiceWorker()
+    logger.info(
+        `Service worker generated (${swResult.count} media files, cache ${swResult.cacheName})`
+    )
+} catch (err) {
+    logger.error('Failed to generate service worker', { error: err })
+}
+
 const server = require('http').createServer(app)
 const io = require('socket.io')(server)
 server.listen(port, () => {
