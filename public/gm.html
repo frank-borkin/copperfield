@@ -9,8 +9,9 @@
             crossorigin="anonymous"
         ></script>
         <link href="bootstrap.min.css" rel="stylesheet" />
-        <script src="https://cdn.auth0.com/js/auth0-spa-js/2.1/auth0-spa-js.production.js"></script>
+        <!--script src="https://cdn.auth0.com/js/auth0-spa-js/2.1/auth0-spa-js.production.js"></script -->
         <script>
+            /*
             let auth0Client = null
             const fetchAuthConfig = () => fetch('/auth_config.json')
             const configureClient = async () => {
@@ -29,8 +30,9 @@
                     },
                 })
             }
-
+*/
             window.onload = async () => {
+                /*
                 await configureClient()
                 const isAuthenticated = await auth0Client.isAuthenticated()
                 if (!isAuthenticated) {
@@ -54,12 +56,12 @@
                             },
                         })
                     }
-                } else {
-                    const user = await auth0Client.getUser()
-                    document.getElementById('user').innerHTML = user.name
+                } else { */
+                    //const user = await auth0Client.getUser()
+                    document.getElementById('user').innerHTML = "GM" //user.name
                     document.getElementById('games').value =
                         localStorage.getItem('game') || 0
-                }
+                //}
             }
         </script>
         <style>
@@ -374,9 +376,9 @@
                     action: action,
                     gm: document.getElementById('user').innerHTML,
                 })
-                if (action == 'finish') {
-                    setTimeout(logout, 120000) // 2 mins
-                }
+//                if (action == 'finish') {
+//                    setTimeout(logout, 120000) // 2 mins
+//                }
             })
 
             $('#shortclues').change(function () {
@@ -408,7 +410,7 @@
                 })
             })
 
-            $('#user').click(logout)
+            //$('#user').click(logout)
 
             function setGame() {
                 $('#p0').css('display', 'none')
